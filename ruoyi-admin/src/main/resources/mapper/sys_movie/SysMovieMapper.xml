@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.sys_movie.mapper.SysMovieMapper">
+    
+    <resultMap type="SysMovie" id="SysMovieResult">
+        <result property="movieId"    column="movie_id"    />
+        <result property="title"    column="title"    />
+        <result property="genres"    column="genres"    />
+        <result property="imdbId"    column="imdb_id"    />
+        <result property="tmdbId"    column="tmdb_id"    />
+        <result property="createTime"    column="create_time"    />
+        <result property="updateTime"    column="update_time"    />
+    </resultMap>
+
+    <sql id="selectSysMovieVo">
+        select movie_id, title, genres, imdb_id, tmdb_id, create_time, update_time from sys_movie
+    </sql>
+
+    <select id="selectSysMovieList" parameterType="SysMovie" resultMap="SysMovieResult">
+        <include refid="selectSysMovieVo"/>
+        <where>  
+            <if test="title != null  and title != ''"> and title = #{title}</if>
+            <if test="genres != null  and genres != ''"> and genres = #{genres}</if>
+            <if test="imdbId != null  and imdbId != ''"> and imdb_id = #{imdbId}</if>
+            <if test="tmdbId != null  and tmdbId != ''"> and tmdb_id = #{tmdbId}</if>
+        </where>
+    </select>
+    
+    <select id="selectSysMovieByMovieId" parameterType="Long" resultMap="SysMovieResult">
+        <include refid="selectSysMovieVo"/>
+        where movie_id = #{movieId}
+    </select>
+
+    <insert id="insertSysMovie" parameterType="SysMovie">
+        insert into sys_movie
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="movieId != null">movie_id,</if>
+            <if test="title != null and title != ''">title,</if>
+            <if test="genres != null">genres,</if>
+            <if test="imdbId != null">imdb_id,</if>
+            <if test="tmdbId != null">tmdb_id,</if>
+            <if test="createTime != null">create_time,</if>
+            <if test="updateTime != null">update_time,</if>
+         </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="movieId != null">#{movieId},</if>
+            <if test="title != null and title != ''">#{title},</if>
+            <if test="genres != null">#{genres},</if>
+            <if test="imdbId != null">#{imdbId},</if>
+            <if test="tmdbId != null">#{tmdbId},</if>
+            <if test="createTime != null">#{createTime},</if>
+            <if test="updateTime != null">#{updateTime},</if>
+         </trim>
+    </insert>
+
+    <update id="updateSysMovie" parameterType="SysMovie">
+        update sys_movie
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="title != null and title != ''">title = #{title},</if>
+            <if test="genres != null">genres = #{genres},</if>
+            <if test="imdbId != null">imdb_id = #{imdbId},</if>
+            <if test="tmdbId != null">tmdb_id = #{tmdbId},</if>
+            <if test="createTime != null">create_time = #{createTime},</if>
+            <if test="updateTime != null">update_time = #{updateTime},</if>
+        </trim>
+        where movie_id = #{movieId}
+    </update>
+
+    <delete id="deleteSysMovieByMovieId" parameterType="Long">
+        delete from sys_movie where movie_id = #{movieId}
+    </delete>
+
+    <delete id="deleteSysMovieByMovieIds" parameterType="String">
+        delete from sys_movie where movie_id in 
+        <foreach item="movieId" collection="array" open="(" separator="," close=")">
+            #{movieId}
+        </foreach>
+    </delete>
+</mapper>
