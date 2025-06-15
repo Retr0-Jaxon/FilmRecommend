@@ -151,27 +151,47 @@ export default {
       });
     },
 
+    // ... 在 methods 对象中 ...
+
     /**
      * 将后端返回的单个电影对象转换为前端需要的格式
      * @param {object} movie - 后端返回的原始电影对象
      * @returns {object} - 前端格式的电影对象
      */
     mapMovieData(movie) {
+      // [重要!] 你的后端数据中没有提供海报路径(poster_path)
+      // 这里我们暂时使用一个占位符图片。你需要和后端确认如何获取海报图。
+      // 可能是需要用 movie_id 再去请求，或者后端直接提供一个完整的URL。
+      // 暂时用一个固定的占位图地址。
+      const posterUrl = 'https://via.placeholder.com/500x750.png?text=' + movie.title; // 占位图
+
       // 安全地处理 genres 和 countries 字符串
-      const movieGenres = movie.genres ? movie.genres.split(',').map(g => g.trim()) : [];
-      const movieCountries = movie.countries ? movie.countries.split(',').map(c => c.trim()) : [];
+      const movieGenres = movie.genres_Str ? movie.genres_Str.split(',').map(g => g.trim()) : [];
+      const movieCountries = movie.countries_Str ? movie.countries_Str.split(',').map(c => c.trim()) : [];
 
       return {
         id: movie.movie_id,
         title: movie.title,
-        // [重要] 假设后端返回 poster_path 字段
-        posterUrl: movie.poster_path ? `${IMAGE_BASE_URL}${movie.poster_path}` : 'path/to/default/poster.jpg',
-        isVip: movie.access_level === 'VIP',
-        playCount: movie.weekly_popularity || movie.popularity || 0,
-        rating: movie.vote_average || 0,
-        genres: movieGenres,
-        region: movieCountries.length > 0 ? movieCountries[0] : '未知', // 取第一个国家作为主要地区
-        // [重要] 假设后端返回 release_date 字段用于排序
+        // [重要!] 使用占位图，因为后端没返回 poster_path
+        posterUrl: posterUrl,
+        // posterUrl: movie.poster_path ? `${IMAGE_BASE_URL}${movie.poster_path}` : 'path/to/default/poster.jpg', // 这是你原来的代码，会失败
+
+        // 修正大小写问题
+        isVip: movie.access_Level === 'VIP', // 注意是 access_Level
+
+        // 修正大小写问题，并提供备用值
+        playCount: movie.weekly_Popularity || movie.popularity || 0, // 注意是 weekly_Popularity
+
+        // 修正大小写问题
+        rating: movie.vote_Average || 0, // 注意是 vote_Average
+
+        // 修正名称问题
+        genres: movieGenres, // 从 genres_Str 解析
+
+        // 修正名称问题
+        region: movieCountries.length > 0 ? movieCountries[0] : '未知',
+
+        // 后端没有 release_date，先用一个默认值，否则排序会出问题
         releaseDate: movie.release_date || '1970-01-01',
       };
     },
