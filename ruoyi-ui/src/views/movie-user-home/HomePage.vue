@@ -90,14 +90,17 @@ export default {
   },
   computed: {
     /**
-     * 热播电影列表 (取 allMovies 的前10个)
+     * 热播电影列表 (Top 10)。
+     * 正确地依赖于从后端获取的、已按热度排序的 allMovies 列表。
      */
     hotMovies() {
       return this.allMovies.slice(0, 10);
     },
 
     /**
-     * 按类型分组的电影列表，按评分排序
+     * 按类型分组的电影列表。
+     * 逻辑：展示每个类型下“最热门”的电影。
+     * 排序依据：热度 (playCount)，该数据来自后端的 weekly_Popularity。
      */
     moviesByGenre() {
       const grouped = {};
@@ -105,7 +108,7 @@ export default {
         if (genre.key !== 'all') {
           grouped[genre.key] = this.allMovies
             .filter(movie => movie.genres.includes(genre.key))
-            .sort((a, b) => b.rating - a.rating) // 按评分重新排序
+            .sort((a, b) => b.playCount - a.playCount) // 按热度排序
             .slice(0, 10);
         }
       });
@@ -113,7 +116,9 @@ export default {
     },
 
     /**
-     * 按地区分组的电影列表，按发布日期排序
+     * 按地区分组的电影列表。
+     * 逻辑：因缺少发布日期，改为展示每个地区“评分最高”的电影。
+     * 排序依据：评分 (rating)，该数据来自后端的 vote_Average。
      */
     moviesByRegion() {
       const grouped = {};
@@ -121,7 +126,7 @@ export default {
         if (region.key !== 'all') {
           grouped[region.key] = this.allMovies
             .filter(movie => movie.region === region.key)
-            .sort((a, b) => new Date(b.releaseDate) - new Date(a.releaseDate)) // 按日期重新排序
+            .sort((a, b) => b.rating - a.rating) // 按评分排序
             .slice(0, 10);
         }
       });
@@ -221,14 +226,20 @@ export default {
     async fetchData() {
       this.loading = true;
       try {
-        // 只调用一个接口，获取按热度排好序的所有电影
-        // 假设 movieService.getList() 已被修改为请求 /movie/hotmovies
+        // 1. 从后端获取按 ID 排序的原始电影数据
         const rawMovies = await movieService.getList();
 
-        // 映射所有电影数据，结果本身就是按热度排序的
-        this.allMovies = rawMovies.map(this.mapMovieData);
+        // 2. 将原始数据映射为前端需要的格式
+        const mappedMovies = rawMovies.map(this.mapMovieData);
 
-        // 基于获取的数据，动态生成筛选器列表
+        // 3. [核心修改] 在前端对电影列表按热度(playCount)进行降序排序
+        //    b.playCount - a.playCount 确保热度高的排在前面
+        const sortedMovies = mappedMovies.sort((a, b) => b.playCount - a.playCount);
+
+        // 4. 将排序后的权威列表赋值给 this.allMovies
+        this.allMovies = sortedMovies;
+
+        // 5. 基于排序后的数据，动态生成筛选器列表
         this.generateFilters(this.allMovies);
 
       } catch (error) {
