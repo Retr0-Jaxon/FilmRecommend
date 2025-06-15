@@ -2,7 +2,7 @@
 <!DOCTYPE mapper
 PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
 "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="com.ruoyi.sys_movie.mapper.SysMovieMapper">
+<mapper namespace="com.ruoyi.sys_movie.bak.mapper.SysMovieMapper">
     
     <resultMap type="SysMovie" id="SysMovieResult">
         <result property="movieId"    column="movie_id"    />

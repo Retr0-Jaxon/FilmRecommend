@@ -5,6 +5,9 @@ Vue.use(Router)
 
 /* Layout */
 import Layout from '@/layout'
+import HomePage from "@/views/movie-user-home/HomePage.vue";
+import RankingPage from "@/views/movie-user-home/RankingPage.vue";
+import SearchPage from "@/views/movie-user-home/SearchPage.vue";
 
 /**
  * Note: 路由配置项
@@ -47,6 +50,28 @@ export const constantRoutes = [
     hidden: true
   },
   {
+    path: '',
+    component: () => import('@/views/movie-user-home/MainLayout.vue'),
+    children: [
+      {
+        path: '', // 当访问'/'时，默认显示 HomePage
+        name: 'Home',
+        component: HomePage
+      },
+      {
+        path: 'ranking', // 当访问'/ranking'时，显示 RankingPage
+        name: 'Ranking',
+        component: RankingPage
+      },
+      {
+        path: 'search',
+        name: 'Search',
+        component: SearchPage
+      }
+    ],
+    hidden: true
+  },
+  {
     path: '/register',
     component: () => import('@/views/register'),
     hidden: true
@@ -62,12 +87,12 @@ export const constantRoutes = [
     hidden: true
   },
   {
-    path: '',
+    path: '/index',
     component: Layout,
-    redirect: 'index',
+    redirect: '/index',
     children: [
       {
-        path: 'index',
+        path: '/index',
         component: () => import('@/views/index'),
         name: 'Index',
         meta: { title: '首页', icon: 'dashboard', affix: true }

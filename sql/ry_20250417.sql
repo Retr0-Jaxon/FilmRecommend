@@ -673,7 +673,7 @@ create table gen_table (
 -- ----------------------------
 -- 19、代码生成业务表字段
 -- ----------------------------
-drop table if exists gen_table_column;
+drop table if exists `gen_table_column.bak`;
 create table gen_table_column (
   column_id         bigint(20)      not null auto_increment    comment '编号',
   table_id          bigint(20)                                 comment '归属表编号',
