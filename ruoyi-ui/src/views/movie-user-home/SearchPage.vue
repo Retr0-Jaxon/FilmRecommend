@@ -6,192 +6,221 @@
       <div class="search-input-wrapper">
         <svg class="search-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill="currentColor" d="M9.5,3A6.5,6.5 0 0,1 16,9.5C16,11.11 15.41,12.59 14.44,13.73L14.71,14H15.5L20.5,19L19,20.5L14,15.5V14.71L13.73,14.44C12.59,15.41 11.11,16 9.5,16A6.5,6.5 0 0,1 3,9.5A6.5,6.5 0 0,1 9.5,3M9.5,5C7,5 5,7 5,9.5C5,12 7,14 9.5,14C12,14 14,12 14,9.5C14,7 12,5 9.5,5Z"></path></svg>
         <input
-            type="text"
-            class="search-input"
-            v-model="searchQuery"
-            placeholder="输入电影名称..."
-            autofocus
+          type="text"
+          class="search-input"
+          v-model="searchQuery"
+          placeholder="输入电影名称或导演..."
+          autofocus
         />
       </div>
     </div>
 
+    <!-- 加载状态 -->
+    <div v-if="loading" class="loading-container">
+      <div class="loading-spinner"></div>
+      <p>正在加载影片数据库...</p>
+    </div>
+
     <!-- 搜索结果区域 -->
-    <div class="search-results-container">
+    <div v-else class="search-results-container">
       <!-- 初始状态 -->
-      <div v-if="!searchQuery" class="initial-prompt">
+      <div v-if="!searchQuery.trim()" class="initial-prompt">
         <p>开始输入以搜索影片。</p>
       </div>
 
-      <!-- 有搜索结果 -->
-      <transition-group v-else-if="filteredMovies.length > 0" name="list-fade" tag="ul" class="search-results-list">
-        <li v-for="movie in filteredMovies" :key="movie.id" class="result-item">
-          <img :src="movie.posterUrl" :alt="movie.title" class="poster" />
-          <div class="movie-details">
-            <h3 class="movie-title">
-              {{ movie.title }}
-              <span v-if="movie.isVip" class="vip-badge-inline">VIP</span>
-            </h3>
-            <div class="movie-info">
-              <span>类型: {{ movie.genre.charAt(0).toUpperCase() + movie.genre.slice(1) }}</span>
-              <span>上映日期: {{ movie.releaseDate }}</span>
+      <!-- 搜索后 -->
+      <div v-else>
+        <!-- 搜索结果列表 (迭代 paginatedMovies) -->
+        <transition-group v-if="paginatedMovies.length > 0" name="list-fade" tag="ul" class="search-results-list">
+          <li v-for="movie in paginatedMovies" :key="movie.id" class="result-item">
+            <img :src="movie.posterUrl" :alt="movie.title" class="poster" />
+            <div class="movie-details">
+              <h3 class="movie-title">
+                {{ movie.title }}
+                <span v-if="movie.isVip" class="vip-badge-inline">VIP</span>
+              </h3>
+              <div class="movie-info">
+                <span>导演: {{ movie.director }}</span>
+                <span>类型: {{ movie.genres.join(' / ') }}</span>
+              </div>
             </div>
-          </div>
-          <button class="play-btn">▶ 播放</button>
-        </li>
-      </transition-group>
+            <button class="play-btn">▶ 播放</button>
+          </li>
+        </transition-group>
 
-      <!-- 无搜索结果 -->
-      <div v-else class="no-results">
-        <p>未找到与 “<strong>{{ searchQuery }}</strong>” 相关的影片。</p>
+        <!-- 无搜索结果 -->
+        <div v-else class="no-results">
+          <p>未找到与 “<strong>{{ searchQuery }}</strong>” 相关的影片。</p>
+        </div>
+
+        <!-- 分页控制器 -->
+        <div v-if="totalPages > 1" class="pagination">
+          <button @click="prevPage" :disabled="currentPage === 1" class="page-btn">上一页</button>
+          <span class="page-info">第 {{ currentPage }} 页 / 共 {{ totalPages }} 页</span>
+          <button @click="nextPage" :disabled="currentPage === totalPages" class="page-btn">下一页</button>
+        </div>
       </div>
     </div>
   </div>
 </template>
 
 <script>
+import { movieService } from '../services/movieService';
+
 export default {
   name: 'SearchPage',
   data() {
     return {
-      searchQuery: '', // 绑定到输入框的值
-      // 在真实应用中，这个数据会通过API获取
-      allMovies: [
-        { id: 1, title: 'Dune: Part Two', posterUrl: 'https://image.tmdb.org/t/p/w500/8b8R8l88Qje9dn9OE8PY05ESeaB.jpg', isVip: true, releaseDate: '2024-02-27', playCount: 8500000, genre: 'scifi' },
-        { id: 2, title: 'Oppenheimer', posterUrl: 'https://image.tmdb.org/t/p/w500/8Gxv8gSFCU0XGDykEGv7zR1n2ua.jpg', isVip: true, releaseDate: '2023-07-19', playCount: 12000000, genre: 'suspense' },
-        { id: 3, title: 'Your Name.', posterUrl: 'https://image.tmdb.org/t/p/w500/xq1Ugd62d23K2knRUx6xxuALTZB.jpg', isVip: false, releaseDate: '2016-08-26', playCount: 25000000, genre: 'romance' },
-        { id: 4, title: 'The Dark Knight', posterUrl: 'https://image.tmdb.org/t/p/w500/qJ2tW6WMUDux911r6m7haRef0WH.jpg', isVip: true, releaseDate: '2008-07-16', playCount: 35000000, genre: 'action' },
-        { id: 5, title: 'Inception', posterUrl: 'https://image.tmdb.org/t/p/w500/oYuLEt3zVCKq27gApcjBsovLgaq.jpg', isVip: false, releaseDate: '2010-07-15', playCount: 32000000, genre: 'scifi' },
-        { id: 6, title: 'La La Land', posterUrl: 'https://image.tmdb.org/t/p/w500/uDO8zWDhfWwoFdEJhQcunderlineAXv.jpg', isVip: false, releaseDate: '2016-12-09', playCount: 18000000, genre: 'romance' },
-        { id: 7, title: 'The Silence of the Lambs', posterUrl: 'https://image.tmdb.org/t/p/w500/uS9m8fHn31aR6fn6Q7nd2vRwsA5.jpg', isVip: true, releaseDate: '1991-02-01', playCount: 28000000, genre: 'suspense' },
-        { id: 8, 'title': 'John Wick: Chapter 4', posterUrl: 'https://image.tmdb.org/t/p/w500/vZloFAK7NmvMGKE7VkF5UHaz0I.jpg', isVip: true, releaseDate: '2023-03-22', playCount: 15000000, genre: 'action'},
-        { id: 9, 'title': 'Interstellar', posterUrl: 'https://image.tmdb.org/t/p/w500/gEU2QniE6E77NI6lCU6MxlNBvIx.jpg', isVip: false, releaseDate: '2014-11-05', playCount: 41000000, genre: 'scifi'},
-        { id: 10, 'title': 'The Notebook', posterUrl: 'https://image.tmdb.org/t/p/w500/r5va04UNo2nL35gQj4pQ22d25s8.jpg', isVip: false, releaseDate: '2004-06-25', playCount: 22000000, genre: 'romance'},
-        { id: 11, 'title': 'Shutter Island', posterUrl: 'https://image.tmdb.org/t/p/w500/4GDy0tA3m5Wk2a443A4sA4z424i.jpg', isVip: true, releaseDate: '2010-02-14', playCount: 30000000, genre: 'suspense'},
-      ],
+      loading: true,
+      searchQuery: '',      // 绑定到输入框的值
+      allMovies: [],        // 存储从API获取的所有电影（映射后）
+      currentPage: 1,       // 当前页码
+      itemsPerPage: 10,     // 每页显示的项目数
     };
   },
   computed: {
     /**
-     * 核心计算属性：根据 searchQuery 实时筛选电影
+     * [第一步] 计算属性：根据 searchQuery 实时筛选所有匹配的电影
+     * 返回的是所有匹配结果，不进行分页。
      */
     filteredMovies() {
-      // 如果搜索框为空，不返回任何结果
       if (!this.searchQuery.trim()) {
         return [];
       }
-
-      // 将搜索词转为小写，以进行不区分大小写的匹配
       const lowerCaseQuery = this.searchQuery.trim().toLowerCase();
+      return this.allMovies.filter(movie => {
+        const titleMatch = movie.title.toLowerCase().includes(lowerCaseQuery);
+        // [新功能] 增加对导演的搜索，并确保 director 字段存在
+        const directorMatch = movie.director && movie.director.toLowerCase().includes(lowerCaseQuery);
+        return titleMatch || directorMatch;
+      });
+    },
 
-      return this.allMovies.filter(movie =>
-          movie.title.toLowerCase().includes(lowerCaseQuery)
-      );
+    /**
+     * [第二步] 计算属性：计算总页数
+     */
+    totalPages() {
+      return Math.ceil(this.filteredMovies.length / this.itemsPerPage);
+    },
+
+    /**
+     * [第三步] 计算属性：对已筛选的结果进行分页
+     * 这个属性最终用于在模板中渲染列表。
+     */
+    paginatedMovies() {
+      const startIndex = (this.currentPage - 1) * this.itemsPerPage;
+      const endIndex = startIndex + this.itemsPerPage;
+      return this.filteredMovies.slice(startIndex, endIndex);
     },
   },
+  methods: {
+    /**
+     * [新增] 从后端获取所有电影数据
+     */
+    async fetchData() {
+      this.loading = true;
+      try {
+        const rawMovies = await movieService.getList();
+        this.allMovies = rawMovies.map(this.mapMovieData);
+      } catch (error) {
+        console.error("搜索页面获取数据失败:", error);
+      } finally {
+        this.loading = false;
+      }
+    },
+
+    /**
+     * [新增] 数据映射函数，确保包含 director 字段
+     */
+    mapMovieData(movie) {
+      const movieGenres = movie.genres_Str ? movie.genres_Str.split(',').map(g => g.trim()) : [];
+      return {
+        id: movie.movie_id,
+        title: movie.title,
+        director: movie.director || '未知', // [关键] 映射导演字段
+        isVip: movie.access_Level > 1,
+        genres: movieGenres,
+        posterUrl: 'https://via.placeholder.com/200x300.png?text=' + encodeURIComponent(movie.title),
+      };
+    },
+
+    // --- 分页方法 ---
+    nextPage() {
+      if (this.currentPage < this.totalPages) {
+        this.currentPage++;
+      }
+    },
+    prevPage() {
+      if (this.currentPage > 1) {
+        this.currentPage--;
+      }
+    },
+  },
+  watch: {
+    /**
+     * [关键] 监听搜索词的变化，当用户重新输入时，自动重置到第一页
+     */
+    searchQuery() {
+      this.currentPage = 1;
+    }
+  },
+  created() {
+    this.fetchData();
+  }
 };
 </script>
 
 <style scoped>
-.search-page-content {
-  padding: 2rem 4rem;
-  min-height: calc(100vh - 68px); /* 减去导航栏高度 */
+/* 添加分页样式 */
+.pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-top: 2rem;
+  padding-bottom: 2rem;
 }
-
-.search-header {
-  margin-bottom: 2.5rem;
-}
-
-.search-header h1 {
-  font-size: 2.5rem;
-  margin-bottom: 1.5rem;
-  color: #fff;
-}
-
-.search-input-wrapper {
-  position: relative;
-}
-
-.search-icon {
-  position: absolute;
-  top: 50%;
-  left: 15px;
-  transform: translateY(-50%);
-  width: 24px;
-  height: 24px;
-  color: #8c8c8c;
-}
-
-.search-input {
-  width: 100%;
-  padding: 1rem 1rem 1rem 3rem; /* 左侧padding为图标留出空间 */
-  font-size: 1.2rem;
+.page-btn {
   background-color: #333;
   color: #fff;
   border: 1px solid #555;
+  padding: 0.5rem 1rem;
+  margin: 0 0.5rem;
+  cursor: pointer;
   border-radius: 4px;
-  box-sizing: border-box;
-  transition: border-color 0.3s, box-shadow 0.3s;
+  transition: background-color 0.3s;
 }
-
-.search-input:focus {
-  outline: none;
-  border-color: #e50914;
-  box-shadow: 0 0 0 2px rgba(229, 9, 20, 0.5);
+.page-btn:hover:not(:disabled) {
+  background-color: #e50914;
 }
-
-.search-results-container {
+.page-btn:disabled {
+  background-color: #1a1a1a;
+  color: #555;
+  cursor: not-allowed;
+}
+.page-info {
   color: #8c8c8c;
+  font-weight: 500;
 }
 
-.initial-prompt, .no-results {
-  text-align: center;
-  padding: 4rem 0;
-  font-size: 1.2rem;
-}
-
-/* 结果列表样式 (复用 RankingPage 的样式以保持一致) */
-.search-results-list {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
-.result-item {
-  display: flex;
-  align-items: center;
-  gap: 1.5rem;
-  background-color: #222;
-  padding: 1rem;
-  border-radius: 8px;
-  transition: background-color 0.3s, transform 0.3s;
-}
-
-.result-item:hover {
-  background-color: #303030;
-  transform: translateY(-5px);
-}
-
-.poster {
-  width: 60px;
-  height: 90px;
-  object-fit: cover;
-  border-radius: 4px;
-  flex-shrink: 0;
-}
-
-.movie-details{flex-grow:1}.movie-title{margin:0 0 .5rem;font-size:1.2rem;color:#fff;display:flex;align-items:center}.movie-info{display:flex;gap:1rem;font-size:.9rem;color:#8c8c8c}.movie-info span{background:#333;padding:2px 8px;border-radius:10px}.play-btn{background-color:#e50914;color:#fff;border:none;padding:.6rem 1.2rem;border-radius:4px;font-weight:700;cursor:pointer;transition:opacity .3s}.play-btn:hover{opacity:.8}
-.vip-badge-inline {
-  display: inline-block;
-  margin-left: 0.5rem;
-  background-color: gold;
-  color: #141414;
-  padding: 2px 6px;
-  border-radius: 4px;
-  font-size: 0.7rem;
-  font-weight: bold;
-}
-.list-fade-enter-active,.list-fade-leave-active{transition:all .5s}.list-fade-enter,.list-fade-leave-to{opacity:0;transform:translateY(20px)}
+/* 沿用或添加其他页面的通用样式 */
+.loading-container { display: flex; flex-direction: column; justify-content: center; align-items: center; margin-top: 5rem; color: #8c8c8c; }
+.loading-spinner { border: 5px solid #333; border-top: 5px solid #e50914; border-radius: 50%; width: 50px; height: 50px; animation: spin 1s linear infinite; margin-bottom: 1rem; }
+@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+.search-page-content { padding: 2rem 4rem; }
+.search-header h1 { font-size: 2.5rem; margin-bottom: 1.5rem; }
+.search-input-wrapper { position: relative; }
+.search-icon { position: absolute; left: 1rem; top: 50%; transform: translateY(-50%); width: 1.5rem; height: 1.5rem; color: #8c8c8c; }
+.search-input { width: 100%; background-color: #333; border: 1px solid #555; border-radius: 4px; padding: 1rem 1rem 1rem 3.5rem; color: #fff; font-size: 1.2rem; }
+.search-results-container { margin-top: 2rem; }
+.initial-prompt, .no-results { text-align: center; color: #8c8c8c; font-size: 1.2rem; padding: 4rem 0; }
+.search-results-list { list-style: none; padding: 0; margin: 0; }
+.result-item { display: flex; align-items: center; background-color: #1f1f1f; border-radius: 4px; margin-bottom: 1rem; padding: 1rem; }
+.poster { width: 80px; height: 120px; object-fit: cover; border-radius: 4px; margin-right: 1.5rem; }
+.movie-details { flex-grow: 1; }
+.movie-title { font-size: 1.4rem; margin-bottom: 0.5rem; }
+.movie-info { color: #8c8c8c; display: flex; flex-direction: column; gap: 0.3rem; }
+.vip-badge-inline { font-size: 0.8rem; background-color: #e50914; color: #fff; padding: 2px 6px; border-radius: 3px; margin-left: 0.5rem; vertical-align: middle; }
+.play-btn { background-color: #e50914; color: #fff; border: none; padding: 0.6rem 1.2rem; border-radius: 4px; cursor: pointer; font-size: 1rem; font-weight: bold; margin-left: auto; }
+.list-fade-enter-active, .list-fade-leave-active { transition: opacity 0.5s; }
+.list-fade-enter, .list-fade-leave-to { opacity: 0; }
 </style>
