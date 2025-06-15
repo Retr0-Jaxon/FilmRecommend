@@ -1,4 +1,4 @@
-import apiClient from './api';
+import axios from 'axios';
 
 export const movieService = {
   /**
@@ -8,7 +8,7 @@ export const movieService = {
   async getList() {
     try {
       // 直接请求返回热度排序后所有电影的接口
-      const response = await apiClient.get('/api/movie/all');
+      const response = await axios.get('/api/movie/all');
       return response.data;
     } catch (error) {
       console.error("Error fetching movie list:", error);
