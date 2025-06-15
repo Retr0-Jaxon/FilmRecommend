@@ -8,6 +8,7 @@ import Layout from '@/layout'
 import HomePage from "@/views/movie-user-home/HomePage.vue";
 import RankingPage from "@/views/movie-user-home/RankingPage.vue";
 import SearchPage from "@/views/movie-user-home/SearchPage.vue";
+import MovieDetailPage from "@/views/movie-user-home/MovieDetailPage.vue";
 
 /**
  * Note: 路由配置项
@@ -67,6 +68,12 @@ export const constantRoutes = [
         path: 'search',
         name: 'Search',
         component: SearchPage
+      },
+      {
+        path: '/movie/:id', // 使用动态路由参数 :id 来接收 movie_id
+        name: 'MovieDetail',
+        component: MovieDetailPage,
+        props: true // 将路由参数作为 props 传递给组件，更方便
       }
     ],
     hidden: true
