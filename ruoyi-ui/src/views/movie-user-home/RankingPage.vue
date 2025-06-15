@@ -5,7 +5,7 @@
       <p>根据您选择的维度实时更新</p>
     </div>
 
-    <!-- 筛选和排序控制栏 -->
+    <!-- 筛选和排序控制栏 (无修改) -->
     <div class="filters-bar">
       <!-- 维度一：时间范围 -->
       <div class="filter-group">
@@ -56,7 +56,8 @@
     <div v-if="loading" class="loading-container"><div class="loading-spinner"></div></div>
     <div v-else class="ranking-list-container">
       <transition-group name="list-fade" tag="ol" class="ranking-list">
-        <li v-for="(movie, index) in rankedMovies" :key="movie.id" class="ranking-item">
+        <!-- 【修改 1】: 在 li 上添加点击事件，用于跳转 -->
+        <li v-for="(movie, index) in rankedMovies" :key="movie.id" class="ranking-item" @click="goToDetailPage(movie.id)">
           <span :class="['rank-number', { 'top-3': index < 3 }]">{{ index + 1 }}</span>
           <img :src="movie.posterUrl" :alt="movie.title" class="poster" />
           <div class="movie-details">
@@ -67,7 +68,8 @@
             </div>
             <div class="movie-meta"><span>{{ movie.region }}</span> | <span>{{ movie.genres.join(' / ') }}</span></div>
           </div>
-          <button class="play-btn">播放</button>
+          <!-- 【修改 2】: 给播放按钮添加 .stop 修饰符的点击事件 -->
+          <button @click.stop="playMovie(movie)" class="play-btn">播放</button>
         </li>
       </transition-group>
       <div v-if="rankedMovies.length === 0" class="no-results"><p>暂无符合条件的影片</p></div>
@@ -94,31 +96,22 @@ export default {
     };
   },
   computed: {
-    /**
-     * 根据所有筛选器和排序规则，计算最终显示的电影列表
-     */
     rankedMovies() {
-      // 1. 先进行过滤 (Filter)
       let filtered = [...this.allMovies];
 
-      // 1.1 按“影片等级”筛选
       if (this.activeFilters.level === 'vip') {
         filtered = filtered.filter(m => m.isVip);
       }
 
-      // 1.2 按“内容类型”筛选
       if (this.activeFilters.genre !== 'all') {
         filtered = filtered.filter(m => m.genres.includes(this.activeFilters.genre));
       }
 
-      // 2. 再进行排序 (Sort)
       const sorted = filtered.sort((a, b) => {
-        // 如果是按好评排行，则忽略时间范围，直接比较评分
         if (this.activeFilters.sortBy === 'rating') {
           return b.rating - a.rating;
         }
 
-        // 如果是按热播排行，则根据时间范围选择不同的热度字段
         switch (this.activeFilters.timeRange) {
           case 'week':
             return b.weeklyPlayCount - a.weeklyPlayCount;
@@ -126,7 +119,7 @@ export default {
             return b.monthlyPlayCount - a.monthlyPlayCount;
           case 'all':
           default:
-            return b.playCount - a.playCount; // 总热度
+            return b.playCount - a.playCount;
         }
       });
 
@@ -134,9 +127,26 @@ export default {
     },
   },
   methods: {
+    // --- 【新增方法】 ---
     /**
-     * 将后端返回的单个电影对象转换为前端需要的格式
+     * 【新增】跳转到电影详情页
+     * @param {number} movieId - 电影的ID
      */
+    goToDetailPage(movieId) {
+      // 确保你的详情页路由名为 'MovieDetail'
+      this.$router.push({ name: 'MovieDetail', params: { id: movieId } });
+    },
+
+    /**
+     * 【新增】处理播放按钮点击事件（示例）
+     * @param {object} movie - 被点击的电影对象
+     */
+    playMovie(movie) {
+      alert(`开始播放: ${movie.title}`);
+      // 在这里可以添加实际的播放逻辑
+    },
+
+    // --- 原有方法 ---
     mapMovieData(movie) {
       const movieGenres = movie.genres_Str ? movie.genres_Str.split(',').map(g => g.trim()) : [];
       const movieCountries = movie.countries_Str ? movie.countries_Str.split(',').map(c => c.trim()) : [];
@@ -153,10 +163,6 @@ export default {
         posterUrl: 'https://via.placeholder.com/200x300.png?text=' + encodeURIComponent(movie.title),
       };
     },
-
-    /**
-     * 从所有电影数据中动态生成类型列表
-     */
     generateGenres(movies) {
       const genreSet = new Set();
       movies.forEach(movie => {
@@ -167,10 +173,6 @@ export default {
         ...Array.from(genreSet).map(g => ({ key: g, name: g }))
       ];
     },
-
-    /**
-     * 获取并处理所有排行榜数据
-     */
     async fetchData() {
       this.loading = true;
       try {
@@ -183,10 +185,6 @@ export default {
         this.loading = false;
       }
     },
-
-    /**
-     * 统一的筛选器设置方法，包含交互优化
-     */
     setFilter(filterName, value) {
       if (filterName === 'sortBy' && value === 'rating') {
         this.activeFilters.timeRange = 'all';
@@ -198,17 +196,9 @@ export default {
 
       this.activeFilters[filterName] = value;
     },
-
-    /**
-     * 动态计算按钮的CSS class
-     */
     getButtonClass(filterName, value) {
       return ['filter-btn', { 'active': this.activeFilters[filterName] === value }];
     },
-
-    /**
-     * 根据当前时间范围，格式化并显示对应的播放量
-     */
     formatPlayCount(movie) {
       let count;
       switch (this.activeFilters.timeRange) {
@@ -224,12 +214,8 @@ export default {
           break;
       }
       if (count >= 10000) return (count / 10000).toFixed(1) + ' 万';
-      return Math.round(count).toLocaleString(); // 对数值取整并格式化
+      return Math.round(count).toLocaleString();
     },
-
-    /**
-     * 从路由参数更新筛选器状态
-     */
     updateFiltersFromRoute(route) {
       const { time, level, genre, sortBy } = route.query;
       this.activeFilters.timeRange = ['all', 'week', 'month'].includes(time) ? time : 'all';
@@ -251,6 +237,11 @@ export default {
 </script>
 
 <style scoped>
+/* 【新增样式】为可点击的列表项添加指针样式 */
+.ranking-item {
+  cursor: pointer;
+}
+
 .ranking-page-content{padding:2rem 4rem;min-height:calc(100vh - 68px)}.ranking-header h1{font-size:2.8rem;font-weight:700;color:#fff;letter-spacing:-1px}.ranking-header p{color:#a0a0a0;margin-top:-.5rem}
 .filters-bar{display:flex;flex-direction:column;gap:1.5rem;margin-block:2.5rem;padding:1.5rem 0;border-top:1px solid #303030;border-bottom:1px solid #303030}.filter-group{display:flex;align-items:center;gap:1rem;flex-wrap:wrap}.filter-label{font-weight:500;color:#a0a0a0;min-width:80px;font-size:.9rem;text-align:right;padding-right:1rem}
 .filter-btn {

@@ -15,4 +15,18 @@ export const movieService = {
       throw error;
     }
   },
+  // 【新增】根据ID获取单个电影
+  getMovieById(id) {
+    return new Promise((resolve, reject) => {
+      setTimeout(() => {
+        // 路由参数是字符串，而 movie_id 是数字，所以用 == 进行比较
+        const movie = mockMovieDatabase.find(m => m.movie_id == id);
+        if (movie) {
+          resolve(movie);
+        } else {
+          reject(new Error(`Movie with id ${id} not found.`));
+        }
+      }, 300); // 模拟网络延迟
+    });
+  }
 };

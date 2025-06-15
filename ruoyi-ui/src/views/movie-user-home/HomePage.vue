@@ -28,7 +28,8 @@
             热播排行 <span class="view-all-arrow">›</span>
           </h2>
           <div class="thumbnails-container">
-            <div class="thumbnail" v-for="item in hotMovies" :key="item.id">
+            <!-- 【修改】添加点击事件以跳转到详情页 -->
+            <div class="thumbnail" v-for="item in hotMovies" :key="item.id" @click="goToDetailPage(item.id)">
               <img :src="item.posterUrl" :alt="item.title">
               <span v-if="item.isVip" class="vip-badge">VIP</span>
             </div>
@@ -42,7 +43,8 @@
             {{ genre.name }}精选 <span class="view-all-arrow">›</span>
           </h2>
           <div class="thumbnails-container">
-            <div class="thumbnail" v-for="item in moviesByGenre[genre.key]" :key="item.id">
+            <!-- 【修改】添加点击事件以跳转到详情页 -->
+            <div class="thumbnail" v-for="item in moviesByGenre[genre.key]" :key="item.id" @click="goToDetailPage(item.id)">
               <img :src="item.posterUrl" :alt="item.title">
               <span v-if="item.isVip" class="vip-badge">VIP</span>
             </div>
@@ -55,7 +57,8 @@
             {{ region.name }}电影 <span class="view-all-arrow">›</span>
           </h2>
           <div class="thumbnails-container">
-            <div class="thumbnail" v-for="item in moviesByRegion[region.key]" :key="item.id">
+            <!-- 【修改】添加点击事件以跳转到详情页 -->
+            <div class="thumbnail" v-for="item in moviesByRegion[region.key]" :key="item.id" @click="goToDetailPage(item.id)">
               <img :src="item.posterUrl" :alt="item.title">
               <span v-if="item.isVip" class="vip-badge">VIP</span>
             </div>
@@ -69,64 +72,44 @@
 <script>
 import { movieService } from '../services/movieService';
 
-// [重要] 请将此基础URL替换为你的实际图片服务器地址
-const IMAGE_BASE_URL = 'https://image.tmdb.org/t/p/w500';
-
 export default {
   name: 'HomePage',
   data() {
     return {
       loading: true,
       heroContent: {
-        // Hero 内容可以保持硬编码，或在 fetchData 成功后从 hotMovies[0] 动态获取
         title: '纸房子',
         description: '八名盗贼将自己与人质反锁在西班牙皇家造币厂内，他们背后的犯罪首脑则试图操纵警察实现自己的计划…',
         backgroundImage: 'https://image.tmdb.org/t/p/original/pA4sNvco71n729r5n5Y1xGDHnS6.jpg',
       },
-      allMovies: [], // 存储从后端获取的、按热度排序的所有电影
-      genres: [],    // 动态生成的类型列表
-      regions: [],   // 动态生成的地区列表
+      allMovies: [],
+      genres: [],
+      regions: [],
     };
   },
   computed: {
-    /**
-     * 热播电影列表 (Top 10)。
-     * 正确地依赖于从后端获取的、已按热度排序的 allMovies 列表。
-     */
     hotMovies() {
       return this.allMovies.slice(0, 10);
     },
-
-    /**
-     * 按类型分组的电影列表。
-     * 逻辑：展示每个类型下“最热门”的电影。
-     * 排序依据：热度 (playCount)，该数据来自后端的 weekly_Popularity。
-     */
     moviesByGenre() {
       const grouped = {};
       this.genres.forEach(genre => {
         if (genre.key !== 'all') {
           grouped[genre.key] = this.allMovies
             .filter(movie => movie.genres.includes(genre.key))
-            .sort((a, b) => b.playCount - a.playCount) // 按热度排序
+            .sort((a, b) => b.playCount - a.playCount)
             .slice(0, 10);
         }
       });
       return grouped;
     },
-
-    /**
-     * 按地区分组的电影列表。
-     * 逻辑：因缺少发布日期，改为展示每个地区“评分最高”的电影。
-     * 排序依据：评分 (rating)，该数据来自后端的 vote_Average。
-     */
     moviesByRegion() {
       const grouped = {};
       this.regions.forEach(region => {
         if (region.key !== 'all') {
           grouped[region.key] = this.allMovies
             .filter(movie => movie.region === region.key)
-            .sort((a, b) => b.rating - a.rating) // 按评分排序
+            .sort((a, b) => b.rating - a.rating)
             .slice(0, 10);
         }
       });
@@ -135,116 +118,69 @@ export default {
   },
   methods: {
     goToLoginPage(){
-      // 假设登录页路由名为 Login
       this.$router.push({ name: 'Login' });
     },
-    /**
-     * 跳转到排行榜页面
-     */
     goToRankingPage(params) {
       const queryParams = {
         time: params.timeRange || 'all',
         level: params.level || 'all',
         genre: params.genre || 'all',
-        // 如果是点击热播榜，sortBy为plays；如果是点击类型精选，默认也按热播排
         sortBy: params.sortBy || 'plays',
       };
-
       this.$router.push({
-        name: 'Ranking', // 假设排行榜页路由名为 Ranking
+        name: 'Ranking',
         query: queryParams
       });
     },
 
-    // ... 在 methods 对象中 ...
-
     /**
-     * 将后端返回的单个电影对象转换为前端需要的格式
-     * @param {object} movie - 后端返回的原始电影对象
-     * @returns {object} - 前端格式的电影对象
+     * 【新增】跳转到电影详情页
+     * @param {number} movieId - 电影的ID
      */
-    mapMovieData(movie) {
-      // [重要!] 你的后端数据中没有提供海报路径(poster_path)
-      // 这里我们暂时使用一个占位符图片。你需要和后端确认如何获取海报图。
-      // 可能是需要用 movie_id 再去请求，或者后端直接提供一个完整的URL。
-      // 暂时用一个固定的占位图地址。
-      const posterUrl = 'https://via.placeholder.com/500x750.png?text=' + movie.title; // 占位图
+    goToDetailPage(movieId) {
+      // 确保你的详情页路由名为 'MovieDetail'
+      this.$router.push({ name: 'MovieDetail', params: { id: movieId } });
+    },
 
-      // 安全地处理 genres 和 countries 字符串
+    mapMovieData(movie) {
+      const posterUrl = 'https://via.placeholder.com/500x750.png?text=' + encodeURIComponent(movie.title);
       const movieGenres = movie.genres_Str ? movie.genres_Str.split(',').map(g => g.trim()) : [];
       const movieCountries = movie.countries_Str ? movie.countries_Str.split(',').map(c => c.trim()) : [];
 
       return {
         id: movie.movie_id,
         title: movie.title,
-        // [重要!] 使用占位图，因为后端没返回 poster_path
         posterUrl: posterUrl,
-        // posterUrl: movie.poster_path ? `${IMAGE_BASE_URL}${movie.poster_path}` : 'path/to/default/poster.jpg', // 这是你原来的代码，会失败
-
-        // 修正大小写问题
-        isVip: movie.access_Level === 'VIP', // 注意是 access_Level
-
-        // 修正大小写问题，并提供备用值
-        playCount: movie.weekly_Popularity || movie.popularity || 0, // 注意是 weekly_Popularity
-
-        // 修正大小写问题
-        rating: movie.vote_Average || 0, // 注意是 vote_Average
-
-        // 修正名称问题
-        genres: movieGenres, // 从 genres_Str 解析
-
-        // 修正名称问题
+        isVip: movie.access_Level > 1, // 假设 access_Level > 1 就是VIP
+        playCount: movie.weekly_Popularity || movie.popularity || 0,
+        rating: movie.vote_Average || 0,
+        genres: movieGenres,
         region: movieCountries.length > 0 ? movieCountries[0] : '未知',
-
-        // 后端没有 release_date，先用一个默认值，否则排序会出问题
         releaseDate: movie.release_date || '1970-01-01',
       };
     },
-
-    /**
-     * 从所有电影数据中动态生成类型和地区列表
-     * @param {Array} movies - 处理过的电影数据列表
-     */
     generateFilters(movies) {
       const genreSet = new Set();
       const regionSet = new Set();
-
       movies.forEach(movie => {
         movie.genres.forEach(g => genreSet.add(g));
         if(movie.region && movie.region !== '未知') {
           regionSet.add(movie.region);
         }
       });
-
       this.genres = [{ key: 'all', name: '全部类型' }, ...Array.from(genreSet).map(g => ({ key: g, name: g }))];
       this.regions = [{ key: 'all', name: '全部地区' }, ...Array.from(regionSet).map(r => ({ key: r, name: r }))];
     },
-
-    /**
-     * 获取并处理所有主页数据
-     */
     async fetchData() {
       this.loading = true;
       try {
-        // 1. 从后端获取按 ID 排序的原始电影数据
         const rawMovies = await movieService.getList();
-
-        // 2. 将原始数据映射为前端需要的格式
         const mappedMovies = rawMovies.map(this.mapMovieData);
-
-        // 3. [核心修改] 在前端对电影列表按热度(playCount)进行降序排序
-        //    b.playCount - a.playCount 确保热度高的排在前面
         const sortedMovies = mappedMovies.sort((a, b) => b.playCount - a.playCount);
-
-        // 4. 将排序后的权威列表赋值给 this.allMovies
         this.allMovies = sortedMovies;
-
-        // 5. 基于排序后的数据，动态生成筛选器列表
         this.generateFilters(this.allMovies);
-
       } catch (error) {
         console.error("获取首页数据失败:", error);
-        // 你可以在这里设置一个错误状态，在UI上显示错误信息
       } finally {
         this.loading = false;
       }

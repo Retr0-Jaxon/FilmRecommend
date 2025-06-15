@@ -1,4 +1,3 @@
-<!-- src/components/SearchPage.vue -->
 <template>
   <div class="search-page-content">
     <div class="search-header">
@@ -32,7 +31,8 @@
       <div v-else>
         <!-- 搜索结果列表 (迭代 paginatedMovies) -->
         <transition-group v-if="paginatedMovies.length > 0" name="list-fade" tag="ul" class="search-results-list">
-          <li v-for="movie in paginatedMovies" :key="movie.id" class="result-item">
+          <!-- 【修改 1】: 添加 @click 事件，使整行可点击跳转 -->
+          <li v-for="movie in paginatedMovies" :key="movie.id" class="result-item" @click="goToDetail(movie.id)">
             <img :src="movie.posterUrl" :alt="movie.title" class="poster" />
             <div class="movie-details">
               <h3 class="movie-title">
@@ -40,11 +40,18 @@
                 <span v-if="movie.isVip" class="vip-badge-inline">VIP</span>
               </h3>
               <div class="movie-info">
-                <span>导演: {{ movie.director }}</span>
+                <!-- 【修改 2】: 将导演名字变为可点击的链接 -->
+                <span>
+                  导演:
+                  <a @click.stop="searchByDirector(movie.director)" class="director-link">
+                    {{ movie.director }}
+                  </a>
+                </span>
                 <span>类型: {{ movie.genres.join(' / ') }}</span>
               </div>
             </div>
-            <button class="play-btn">▶ 播放</button>
+            <!-- 【修改 3】: 给播放按钮添加 .stop 修饰符，防止点击它时触发整行跳转 -->
+            <button @click.stop="playMovie(movie)" class="play-btn">▶ 播放</button>
           </li>
         </transition-group>
 
@@ -72,17 +79,13 @@ export default {
   data() {
     return {
       loading: true,
-      searchQuery: '',      // 绑定到输入框的值
-      allMovies: [],        // 存储从API获取的所有电影（映射后）
-      currentPage: 1,       // 当前页码
-      itemsPerPage: 10,     // 每页显示的项目数
+      searchQuery: '',
+      allMovies: [],
+      currentPage: 1,
+      itemsPerPage: 10,
     };
   },
   computed: {
-    /**
-     * [第一步] 计算属性：根据 searchQuery 实时筛选所有匹配的电影
-     * 返回的是所有匹配结果，不进行分页。
-     */
     filteredMovies() {
       if (!this.searchQuery.trim()) {
         return [];
@@ -90,23 +93,13 @@ export default {
       const lowerCaseQuery = this.searchQuery.trim().toLowerCase();
       return this.allMovies.filter(movie => {
         const titleMatch = movie.title.toLowerCase().includes(lowerCaseQuery);
-        // [新功能] 增加对导演的搜索，并确保 director 字段存在
         const directorMatch = movie.director && movie.director.toLowerCase().includes(lowerCaseQuery);
         return titleMatch || directorMatch;
       });
     },
-
-    /**
-     * [第二步] 计算属性：计算总页数
-     */
     totalPages() {
       return Math.ceil(this.filteredMovies.length / this.itemsPerPage);
     },
-
-    /**
-     * [第三步] 计算属性：对已筛选的结果进行分页
-     * 这个属性最终用于在模板中渲染列表。
-     */
     paginatedMovies() {
       const startIndex = (this.currentPage - 1) * this.itemsPerPage;
       const endIndex = startIndex + this.itemsPerPage;
@@ -114,9 +107,6 @@ export default {
     },
   },
   methods: {
-    /**
-     * [新增] 从后端获取所有电影数据
-     */
     async fetchData() {
       this.loading = true;
       try {
@@ -128,23 +118,17 @@ export default {
         this.loading = false;
       }
     },
-
-    /**
-     * [新增] 数据映射函数，确保包含 director 字段
-     */
     mapMovieData(movie) {
       const movieGenres = movie.genres_Str ? movie.genres_Str.split(',').map(g => g.trim()) : [];
       return {
         id: movie.movie_id,
         title: movie.title,
-        director: movie.director || '未知', // [关键] 映射导演字段
+        director: movie.director || '未知',
         isVip: movie.access_Level > 1,
         genres: movieGenres,
         posterUrl: 'https://via.placeholder.com/200x300.png?text=' + encodeURIComponent(movie.title),
       };
     },
-
-    // --- 分页方法 ---
     nextPage() {
       if (this.currentPage < this.totalPages) {
         this.currentPage++;
@@ -155,54 +139,79 @@ export default {
         this.currentPage--;
       }
     },
+
+    // --- 【新增方法】 ---
+
+    /**
+     * 【新增】跳转到电影详情页
+     * @param {number} movieId - 电影的ID
+     */
+    goToDetail(movieId) {
+      // 假设你的详情页路由名为 'MovieDetail'
+      this.$router.push({ name: 'MovieDetail', params: { id: movieId } });
+    },
+
+    /**
+     * 【新增】通过点击导演姓名来更新搜索查询
+     * @param {string} directorName - 导演的名字
+     */
+    searchByDirector(directorName) {
+      if (directorName && directorName !== '未知') {
+        this.searchQuery = directorName;
+      }
+    },
+
+    /**
+     * 【新增】处理播放按钮点击（示例）
+     * @param {object} movie - 电影对象
+     */
+    playMovie(movie) {
+      alert(`开始播放: ${movie.title}`);
+      // 在这里可以添加实际的播放逻辑，例如弹出一个播放器模态框
+    }
   },
   watch: {
-    /**
-     * [关键] 监听搜索词的变化，当用户重新输入时，自动重置到第一页
-     */
     searchQuery() {
       this.currentPage = 1;
     }
   },
   created() {
+    // 【新增】检查URL中是否有查询参数，实现从详情页点击导演返回搜索
+    const initialQuery = this.$route.query.query;
+    if (initialQuery) {
+      this.searchQuery = initialQuery;
+    }
     this.fetchData();
   }
 };
 </script>
 
 <style scoped>
-/* 添加分页样式 */
-.pagination {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  margin-top: 2rem;
-  padding-bottom: 2rem;
+/* 【新增样式】 */
+.result-item {
+  transition: background-color 0.2s ease-in-out;
+  cursor: pointer; /* 提示用户这是可点击的 */
 }
-.page-btn {
-  background-color: #333;
-  color: #fff;
-  border: 1px solid #555;
-  padding: 0.5rem 1rem;
-  margin: 0 0.5rem;
-  cursor: pointer;
-  border-radius: 4px;
-  transition: background-color 0.3s;
+.result-item:hover {
+  background-color: #2a2a2a; /* 鼠标悬停时改变背景色 */
 }
-.page-btn:hover:not(:disabled) {
-  background-color: #e50914;
+.director-link {
+  color: #a0c4ff; /* 使用一种醒目的颜色以示可点击 */
+  text-decoration: underline;
+  text-decoration-color: transparent;
+  transition: text-decoration-color 0.2s;
 }
-.page-btn:disabled {
-  background-color: #1a1a1a;
-  color: #555;
-  cursor: not-allowed;
-}
-.page-info {
-  color: #8c8c8c;
-  font-weight: 500;
+.director-link:hover {
+  color: #e50914; /* 悬停时变为品牌色 */
+  text-decoration-color: #e50914;
 }
 
-/* 沿用或添加其他页面的通用样式 */
+/* --- 原有样式 --- */
+.pagination { display: flex; justify-content: center; align-items: center; margin-top: 2rem; padding-bottom: 2rem; }
+.page-btn { background-color: #333; color: #fff; border: 1px solid #555; padding: 0.5rem 1rem; margin: 0 0.5rem; cursor: pointer; border-radius: 4px; transition: background-color 0.3s; }
+.page-btn:hover:not(:disabled) { background-color: #e50914; }
+.page-btn:disabled { background-color: #1a1a1a; color: #555; cursor: not-allowed; }
+.page-info { color: #8c8c8c; font-weight: 500; }
 .loading-container { display: flex; flex-direction: column; justify-content: center; align-items: center; margin-top: 5rem; color: #8c8c8c; }
 .loading-spinner { border: 5px solid #333; border-top: 5px solid #e50914; border-radius: 50%; width: 50px; height: 50px; animation: spin 1s linear infinite; margin-bottom: 1rem; }
 @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
