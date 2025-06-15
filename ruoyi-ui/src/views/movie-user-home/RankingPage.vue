@@ -7,49 +7,32 @@
 
     <!-- 筛选和排序控制栏 -->
     <div class="filters-bar">
-      <!-- 维度一：时间范围 -->
-      <div class="filter-group">
-        <span class="filter-label">时间范围:</span>
-        <button
-            @click="setFilter('timeRange', 'all')"
-            :class="getButtonClass('timeRange', 'all')"
-        >全部排行</button>
-        <button
-            @click="setFilter('timeRange', 'month')"
-            :class="getButtonClass('timeRange', 'month')"
-        >本月排行</button>
-        <button
-            @click="setFilter('timeRange', 'week')"
-            :class="getButtonClass('timeRange', 'week')"
-        >本周排行</button>
-      </div>
-
-      <!-- 维度二：影片等级 -->
+      <!-- 维度一：影片等级 (保留) -->
       <div class="filter-group">
         <span class="filter-label">影片等级:</span>
         <button @click="setFilter('level', 'all')" :class="getButtonClass('level', 'all')">全部影片</button>
         <button @click="setFilter('level', 'vip')" :class="getButtonClass('level', 'vip')">VIP 专享</button>
       </div>
 
-      <!-- 维度三：内容类型 -->
+      <!-- 维度二：内容类型 (保留) -->
       <div class="filter-group">
         <span class="filter-label">内容类型:</span>
         <button
-            v-for="genre in genres"
-            :key="genre.key"
-            @click="setFilter('genre', genre.key)"
-            :class="getButtonClass('genre', genre.key)"
+          v-for="genre in genres"
+          :key="genre.key"
+          @click="setFilter('genre', genre.key)"
+          :class="getButtonClass('genre', genre.key)"
         >
           {{ genre.name }}
         </button>
       </div>
 
-      <!-- 维度四：排序依据 -->
+      <!-- 维度三：排序依据 (修改) -->
       <div class="filter-group">
         <span class="filter-label">排序依据:</span>
         <button @click="setFilter('sortBy', 'plays')" :class="getButtonClass('sortBy', 'plays')">按热播排行</button>
         <button @click="setFilter('sortBy', 'rating')" :class="getButtonClass('sortBy', 'rating')">按好评排行</button>
-        <button @click="setFilter('sortBy', 'latest')" :class="getButtonClass('sortBy', 'latest')">按最新发布</button>
+        <!-- [移除] 按最新发布按钮 -->
       </div>
     </div>
 
@@ -66,7 +49,8 @@
               <span class="info-rating">★ {{ movie.rating.toFixed(1) }}</span>
               <span class="info-plays">▶ {{ formatPlayCount(movie.playCount) }}</span>
             </div>
-            <div class="movie-meta"><span>{{ movie.releaseDate }}</span> | <span>{{ movie.region }}</span> | <span>{{ getGenreName(movie.genre) }}</span></div>
+            <!-- [修改] 移除 releaseDate，只显示地区和类型 -->
+            <div class="movie-meta"><span>{{ movie.region }}</span> | <span>{{ movie.genres.join(' / ') }}</span></div>
           </div>
           <button class="play-btn">播放</button>
         </li>
@@ -77,6 +61,7 @@
 </template>
 
 <script>
+// [重要] 假设 movieService.getList() 是获取所有电影的函数
 import { movieService } from '../services/movieService';
 
 export default {
@@ -84,108 +69,129 @@ export default {
   data() {
     return {
       loading: true,
-      allMovies: [],
-      genres: [],
+      allMovies: [], // 存储映射后的所有电影数据
+      genres: [],    // 动态生成的类型列表
       activeFilters: {
-        timeRange: 'all',
+        // [移除] timeRange
         level: 'all',
         genre: 'all',
-        sortBy: 'plays',
+        sortBy: 'plays', // 'latest' 已不可用
       },
-      // 新增：用于追踪按钮点击的瞬时状态
-      clickedButton: {
-        name: '',
-        value: ''
-      }
     };
   },
   computed: {
+    /**
+     * [重构] 根据当前激活的筛选器和排序规则，计算最终显示的电影列表
+     */
     rankedMovies() {
-      // ... 计算属性逻辑保持不变 ...
+      // 1. 从所有电影的副本开始
       let movies = [...this.allMovies];
-      const now = new Date();
-      if (this.activeFilters.timeRange === 'week') {
-        const oneWeekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-        movies = movies.filter(m => new Date(m.releaseDate) >= oneWeekAgo);
-      } else if (this.activeFilters.timeRange === 'month') {
-        const oneMonthAgo = new Date(now.getFullYear(), now.getMonth() - 1, now.getDate());
-        movies = movies.filter(m => new Date(m.releaseDate) >= oneMonthAgo);
-      }
+
+      // 2. 按“影片等级”筛选
       if (this.activeFilters.level === 'vip') {
         movies = movies.filter(m => m.isVip);
       }
+
+      // 3. 按“内容类型”筛选
+      // [修正BUG] movie.genres 是数组，需要用 .includes() 判断
       if (this.activeFilters.genre !== 'all') {
-        movies = movies.filter(m => m.genre === this.activeFilters.genre);
+        movies = movies.filter(m => m.genres.includes(this.activeFilters.genre));
       }
+
+      // 4. 按“排序依据”排序
       switch (this.activeFilters.sortBy) {
         case 'rating':
-          movies.sort((a, b) => b.rating - a.rating);
+          movies.sort((a, b) => b.rating - a.rating); // 按好评
           break;
-        case 'latest':
-          movies.sort((a, b) => new Date(b.releaseDate) - new Date(a.releaseDate));
-          break;
+        case 'plays':
         default:
-          movies.sort((a, b) => b.playCount - a.playCount);
+          movies.sort((a, b) => b.playCount - a.playCount); // 按热播
           break;
+        // [移除] 'latest' 排序
       }
       return movies;
     },
   },
   methods: {
-    // 统一的筛选器设置方法 (已优化)
-    setFilter(filterName, value) {
-      // 1. 设置筛选器状态
-      this.activeFilters[filterName] = value;
-
-      // 2. 记录哪个按钮被点击了
-      this.clickedButton = { name: filterName, value };
-
-      // 3. 短暂的视觉反馈后清除点击状态
-      setTimeout(() => {
-        this.clickedButton = { name: '', value: '' };
-      }, 200); // 200毫秒的视觉暂留
+    /**
+     * [复用] 将后端返回的单个电影对象转换为前端需要的格式
+     */
+    mapMovieData(movie) {
+      const movieGenres = movie.genres_Str ? movie.genres_Str.split(',').map(g => g.trim()) : [];
+      const movieCountries = movie.countries_Str ? movie.countries_Str.split(',').map(c => c.trim()) : [];
+      return {
+        id: movie.movie_id,
+        title: movie.title,
+        playCount: movie.weekly_Popularity || movie.popularity || 0,
+        rating: movie.vote_Average || 0,
+        isVip: movie.access_Level > 1, // 假设 >1 是 VIP
+        genres: movieGenres,
+        region: movieCountries.length > 0 ? movieCountries[0] : '未知',
+        posterUrl: 'https://via.placeholder.com/200x300.png?text=' + encodeURIComponent(movie.title),
+        releaseDate: '1970-01-01', // 填充一个值，但我们不使用它
+      };
     },
 
-    // 新增：用于动态计算按钮class的方法
-    getButtonClass(filterName, value) {
-      return [
-        'filter-btn',
-        {
-          // 主要的激活状态
-          'active': this.activeFilters[filterName] === value,
-          // 短暂的点击反馈状态
-          'clicked': this.clickedButton.name === filterName && this.clickedButton.value === value
-        }
+    /**
+     * [新增] 从所有电影数据中动态生成类型列表
+     */
+    generateGenres(movies) {
+      const genreSet = new Set();
+      movies.forEach(movie => {
+        movie.genres.forEach(g => genreSet.add(g));
+      });
+      // 将 Set 转换为组件需要的 [{ key, name }] 格式
+      this.genres = [
+        { key: 'all', name: '全部类型' },
+        ...Array.from(genreSet).map(g => ({ key: g, name: g }))
       ];
     },
 
-    formatPlayCount(count) {
-      if (count >= 10000) return (count / 10000).toFixed(1) + ' 万';
-      return count.toLocaleString();
-    },
-    getGenreName(genreKey) {
-      const genre = this.genres.find(g => g.key === genreKey);
-      return genre ? genre.name : '未知';
-    },
+    /**
+     * [重构] 获取并处理所有排行榜数据
+     */
     async fetchData() {
       this.loading = true;
       try {
-        [this.allMovies, this.genres] = await Promise.all([
-          movieService.getAllMovies(),
-          movieService.getGenres(),
-        ]);
+        // 1. 只调用一个接口获取所有电影
+        const rawMovies = await movieService.getList();
+
+        // 2. 映射所有电影数据
+        this.allMovies = rawMovies.map(this.mapMovieData);
+
+        // 3. 动态生成类型列表
+        this.generateGenres(this.allMovies);
+
       } catch (error) {
         console.error("获取排行榜数据失败:", error);
       } finally {
         this.loading = false;
       }
     },
+
+    // --- 以下方法保持不变或稍作调整 ---
+
+    setFilter(filterName, value) {
+      this.activeFilters[filterName] = value;
+      // [可选] 我们可以简化一下，不再需要视觉反馈的逻辑
+    },
+
+    getButtonClass(filterName, value) {
+      return ['filter-btn', { 'active': this.activeFilters[filterName] === value }];
+    },
+
+    formatPlayCount(count) {
+      if (count >= 10000) return (count / 10000).toFixed(1) + ' 万';
+      return count.toLocaleString();
+    },
+
     updateFiltersFromRoute(route) {
-      const { time, level, genre, sort } = route.query;
-      this.activeFilters.timeRange = time || 'all';
+      // [调整] 移除 time 和 latest 的处理
+      const { level, genre, sortBy } = route.query;
       this.activeFilters.level = level || 'all';
       this.activeFilters.genre = genre || 'all';
-      this.activeFilters.sortBy = sort || 'plays';
+      // 确保 sortBy 的值是有效的
+      this.activeFilters.sortBy = (sortBy === 'rating' || sortBy === 'plays') ? sortBy : 'plays';
     }
   },
   created() {
