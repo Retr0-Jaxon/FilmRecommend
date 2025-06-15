@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.tmdb_movie.mapper.MovieMapper">
+    <select id="selectAllMovies" resultType="com.ruoyi.tmdb_movie.domain.Movie">
+        SELECT
+            movie_id, overview, popularity, tagline, title,
+            vote_average, vote_count, director, countries_str,
+            weekly_popularity, monthly_popularity, genres_str, access_level
+        FROM tmdb_movies
+    </select>
+</mapper>
