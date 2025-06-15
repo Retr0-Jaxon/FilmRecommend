@@ -1,4 +1,4 @@
-import axios from 'axios';
+import apiClient from './api';
 
 export const movieService = {
   /**
