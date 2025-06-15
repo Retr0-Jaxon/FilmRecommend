@@ -8,7 +8,7 @@ export const movieService = {
   async getList() {
     try {
       // 直接请求返回热度排序后所有电影的接口
-      const response = await axios.get('/api/movies/all');
+      const response = await axios.get('http://localhost:8080/api/movies/all');
       return response.data;
     } catch (error) {
       console.error("Error fetching movie list:", error);
