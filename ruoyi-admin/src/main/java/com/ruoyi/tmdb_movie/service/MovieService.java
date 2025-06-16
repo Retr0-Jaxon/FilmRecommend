@@ -1,6 +1,7 @@
 package com.ruoyi.tmdb_movie.service;
 
 import com.alibaba.fastjson2.JSON;
+import com.ruoyi.tmdb_movie.config.RestTemplateConfig;
 import com.ruoyi.tmdb_movie.config.TmdbConfig;
 import com.ruoyi.tmdb_movie.domain.Movie;
 import com.ruoyi.tmdb_movie.mapper.MovieMapper;
@@ -24,10 +25,10 @@ public class MovieService {
     private RedisTemplate<Object, Object> redisTemplate;
 
     @Autowired
-    private static RestTemplate restTemplate;
+    private RestTemplate restTemplate;
 
     @Autowired
-    private static TmdbConfig tmdbConfig;
+    private TmdbConfig tmdbConfig;
 
     private static final String REDIS_KEY = "movies:all";
 
@@ -53,7 +54,7 @@ public class MovieService {
         redisTemplate.delete(REDIS_KEY);
     }
 
-    public static String getPosterUrlByMovieId(Long movieId) {
+    public String getPosterUrlByMovieId(Long movieId) {
         String url = String.format("%s/movie/%d?api_key=%s",
                 tmdbConfig.getBaseUrl(), movieId, tmdbConfig.getApiKey());
 

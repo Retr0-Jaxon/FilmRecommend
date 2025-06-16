@@ -8,7 +8,6 @@
     <main v-else>
       <!-- 主视觉区 -->
       <section class="hero" :style="{ backgroundImage: 'url(' + heroContent.backgroundImage + ')' }">
-        <button @click="goToLoginPage" class="btn btn-login">登录</button>
         <div class="hero-content">
           <h1 class="hero-title">{{ heroContent.title }}</h1>
           <p class="hero-description">{{ heroContent.description }}</p>

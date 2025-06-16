@@ -43,7 +43,7 @@ public class MovieController {
         String posterUrl = redisTemplate.opsForValue().get(cacheKey);
 
         if (posterUrl == null) {
-            posterUrl = MovieService.getPosterUrlByMovieId(movieId);
+            posterUrl = movieService.getPosterUrlByMovieId(movieId);
             if (posterUrl != null) {
                 redisTemplate.opsForValue().set(cacheKey, posterUrl, 1, TimeUnit.DAYS);
             } else {
