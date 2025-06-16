@@ -68,16 +68,13 @@ export default {
     return {
       movie: null,
       loading: true,
-      error: null
+      error: null,
+      posterUrl:null
     };
   },
   computed: {
     posterUrl() {
-      if (this.movie) {
-        // 使用一个更大的占位图
-        return `https://via.placeholder.com/400x600.png?text=${encodeURIComponent(this.movie.title)}`;
-      }
-      return '';
+      
     }
   },
   methods: {
@@ -86,6 +83,7 @@ export default {
       this.error = null;
       try {
         this.movie = await movieService.getMovieById(this.id);
+        this.posterUrl = await movieService.getMoviePosterUrl(this.id);
       } catch (error) {
         console.error("获取电影详情失败:", error);
         this.error = "无法找到该影片的详细信息。";
