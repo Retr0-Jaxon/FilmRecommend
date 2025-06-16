@@ -9,11 +9,19 @@
           <router-link to="/ranking">排行</router-link>
         </nav>
       </div>
-      <div class="nav-right">
-        <button class="profile-pic" aria-label="用户头像">
+      <template v-if="!isLoggedIn" >
+        <div class="nav-right">
+          <router-link to="/register" class="register" aria-label="注册">注册</router-link>
+          <router-link to="/login" class="login" aria-label="登录">登录</router-link>
+        </div>
 
-        </button>
-      </div>
+      </template>
+      <template v-else >
+        <div class="nav-right">
+          <button class="logout" @click="handleLogout" aria-label="退出登录">退出登录</button>
+        </div>
+
+      </template>
     </header>
 
     <main class="content-area">
@@ -24,34 +32,53 @@
 
 <script>
 import { throttle } from 'lodash-es';
+import {getToken, removeToken} from "@/utils/auth";
 
 export default {
   name: 'MainLayout',
   data() {
-    return { isNavScrolled: false };
+    return { isNavScrolled: false,
+    isLoggedIn:false
+    };
   },
   methods: {
     handleScroll: throttle(function() {
       this.isNavScrolled = window.scrollY > 10;
     }, 100),
+    checkLoginStatus() {
+      this.isLoggedIn = !!getToken(); // 检查是否有token
+    },
+    handleLogout() {
+      this.$confirm('确定注销并退出系统吗？', '提示', {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning'
+      }).then(() => {
+        this.$store.dispatch('LogOut').then(() => {
+          location.href = '';
+        })
+      }).catch(() => {});
+    }
   },
   mounted() {
     if (typeof window !== 'undefined') {
       window.addEventListener('scroll', this.handleScroll);
     }
+    this.checkLoginStatus();
   },
   beforeDestroy() {
     if (typeof window !== 'undefined') {
       window.removeEventListener('scroll', this.handleScroll);
     }
   },
+  watch: {
+    // 监听路由变化，检查登录状态
+    '$route': 'checkLoginStatus'
+  }
 };
 </script>
 
-
-
 <style scoped>
-/* 这里是导航栏的专属样式，从 HomePage 移动过来 */
 .main-nav {
   position: fixed;
   top: 0;
@@ -60,16 +87,14 @@ export default {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 1rem 3.5rem;
-  padding-bottom: 1.5rem;
+  padding: 1rem 2rem 1rem 3.5rem;
   z-index: 100;
-  /* //background-image: linear-gradient(to bottom, rgba(0, 0, 0, 0.7) 10%, rgba(0, 0, 0, 0)); */
+  background-color: white;
   transition: background-color 0.4s ease-in-out;
 }
 
 .main-nav.scrolled {
   background-color: #141414;
-
 }
 
 .nav-left, .nav-right {
@@ -94,26 +119,43 @@ export default {
   border-radius: 4px;
 }
 .main-nav.scrolled .nav-links a {
-  color: white !important; /* 强制覆盖默认颜色 */
+  color: white !important;
 }
 
-
 .nav-links a:hover,
-.nav-links .router-link-exact-active { /* 高亮当前激活的路由链接 */
+.nav-links .router-link-exact-active {
   color: #e50914;
   font-weight: bold;
 }
 
-.profile-pic {
-  width: 32px;
+.nav-right a, .nav-right button {
+  display: inline-block;
+  width: 5rem;
   height: 32px;
-  background-color: #0073e6;
+  line-height: 32px;
+  text-align: center;
+  background-color: #e50914;
   border-radius: 4px;
   cursor: pointer;
+  border-width: 0;
+  color: white;
+  text-decoration: none;
+}
+
+.nav-right a:hover, .nav-right button:hover {
+  opacity: 0.8;
+}
+
+.register {
+  margin-right: 2rem;
+  background: #e50914;
+}
+.login{
+  background: #e50914;
 }
 
 /* 确保内容区域不会被固定的导航栏遮挡 */
 .content-area {
-  padding-top: 68px; /* 这个值约等于导航栏的高度 */
+  padding-top: 68px;
 }
 </style>
