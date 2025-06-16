@@ -147,9 +147,10 @@ export default {
     },
 
     // --- 原有方法 ---
-    mapMovieData(movie) {
+    async mapMovieData(movie) {
       const movieGenres = movie.genres_Str ? movie.genres_Str.split(',').map(g => g.trim()) : [];
       const movieCountries = movie.countries_Str ? movie.countries_Str.split(',').map(c => c.trim()) : [];
+      const posterUrl = await movieService.getMoviePosterUrl(movie.movie_id);
       return {
         id: movie.movie_id,
         title: movie.title,
@@ -160,7 +161,7 @@ export default {
         isVip: movie.access_Level > 1,
         genres: movieGenres,
         region: movieCountries.length > 0 ? movieCountries[0] : '未知',
-        posterUrl: 'https://via.placeholder.com/200x300.png?text=' + encodeURIComponent(movie.title),
+        posterUrl: posterUrl,
       };
     },
     generateGenres(movies) {
@@ -177,7 +178,8 @@ export default {
       this.loading = true;
       try {
         const rawMovies = await movieService.getList();
-        this.allMovies = rawMovies.map(this.mapMovieData);
+        this.allMoviesPromise = rawMovies.map(this.mapMovieData);
+        this.allMovies = await Promise.all(this.allMoviesPromise);
         this.generateGenres(this.allMovies);
       } catch (error) {
         console.error("获取排行榜数据失败:", error);

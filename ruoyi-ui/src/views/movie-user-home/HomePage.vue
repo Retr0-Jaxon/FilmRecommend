@@ -340,7 +340,7 @@ export default {
   -ms-overflow-style: none;
   scrollbar-width: none;
   scroll-padding: 0 20px;
-  //gap: 1.5rem; /* 增加图片间距 */
+  /* //gap: 1.5rem; 增加图片间距 */
 }
 
 .thumbnail {
