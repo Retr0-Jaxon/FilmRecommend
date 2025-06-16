@@ -155,7 +155,7 @@ export default {
         title: movie.title,
         posterUrl: posterUrl,
         isVip: movie.access_Level >= 1, // 假设 access_Level > 1 就是VIP
-        playCount: movie.weekly_Popularity || movie.popularity || 0,
+        playCount: movie.popularity || movie.weekly_Popularity || movie.monthly_Popularity || 0,
         rating: movie.vote_Average || 0,
         genres: movieGenres,
         region: movieCountries.length > 0 ? movieCountries[0] : '未知',

@@ -158,7 +158,7 @@ export default {
         weeklyPlayCount: movie.weekly_Popularity || 0,
         monthlyPlayCount: movie.monthly_Popularity || 0,
         rating: movie.vote_Average || 0,
-        isVip: movie.access_Level > 1,
+        isVip: movie.access_Level >= 1,
         genres: movieGenres,
         region: movieCountries.length > 0 ? movieCountries[0] : '未知',
         posterUrl: posterUrl,

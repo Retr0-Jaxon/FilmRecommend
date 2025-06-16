@@ -3,7 +3,7 @@
   <div class="main-layout">
     <header role="navigation" aria-label="主导航栏" :class="['main-nav', { 'scrolled': isNavScrolled }]">
       <div class="nav-left">
-        <router-link to="/" class="nav-logo">PILIPILI</router-link>
+        <router-link to="/" class="nav-logo">FilmRecommend</router-link>
         <nav class="nav-links" aria-label="主导航链接">
           <router-link to="/search">搜索</router-link>
           <router-link to="/ranking">排行</router-link>

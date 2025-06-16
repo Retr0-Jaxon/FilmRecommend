@@ -1,7 +1,7 @@
 {
   "name": "ruoyi",
   "version": "3.8.9",
-  "description": "ry管理系统",
+  "description": "FilmRecommend",
   "author": "ry",
   "license": "MIT",
   "scripts": {
