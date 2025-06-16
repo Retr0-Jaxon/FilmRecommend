@@ -61,6 +61,7 @@ export default {
   justify-content: space-between;
   align-items: center;
   padding: 1rem 3.5rem;
+  padding-bottom: 1.5rem;
   z-index: 100;
   //background-image: linear-gradient(to bottom, rgba(0, 0, 0, 0.7) 10%, rgba(0, 0, 0, 0));
   transition: background-color 0.4s ease-in-out;

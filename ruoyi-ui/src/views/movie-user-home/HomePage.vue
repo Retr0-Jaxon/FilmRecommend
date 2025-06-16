@@ -146,7 +146,7 @@ export default {
       const posterUrl = await movieService.getMoviePosterUrl(movie.movie_id); // 假设后端接口需要 movieId
 
       console.log(posterUrl);
-      
+
       const movieGenres = movie.genres_Str ? movie.genres_Str.split(',').map(g => g.trim()) : [];
       const movieCountries = movie.countries_Str ? movie.countries_Str.split(',').map(c => c.trim()) : [];
 
@@ -181,7 +181,7 @@ export default {
         const mappedMoviesPromises = rawMovies.map(this.mapMovieData);
         const mappedMovies = await Promise.all(mappedMoviesPromises);
         // console.log(mappedMovies);
-        
+
         const sortedMovies = mappedMovies.sort((a, b) => b.playCount - a.playCount);
         this.allMovies = sortedMovies;
         this.generateFilters(this.allMovies);
@@ -336,33 +336,38 @@ export default {
   display: flex;
   overflow-x: auto;
   overflow-y: hidden;
-  padding-bottom: 1rem;
+  padding: 1.5rem 0; /* 增加上下内边距 */
   -ms-overflow-style: none;
   scrollbar-width: none;
-}
-
-.thumbnails-container::-webkit-scrollbar {
-  display: none;
+  scroll-padding: 0 20px;
+  //gap: 1.5rem; /* 增加图片间距 */
 }
 
 .thumbnail {
   position: relative;
-  flex: 0 0 16.66%;
-  padding: 0 0.2rem;
+  flex: 0 0 auto; /* 缩小图片宽度占比 */
+  padding: 0;
   transition: transform 0.3s ease;
   cursor: pointer;
-
+  width: 200px;
+  margin-right: 50px; /* 增加右侧间距 */
 }
 
+.thumbnail:first-child{
+  margin-left: 15px;
+}
 .thumbnail img {
   width: 100%;
+  height:auto;
   border-radius: 4px;
-  display: block;
+
+  aspect-ratio: 2/3; /* 保持图片比例 */
 }
 
 .thumbnail:hover {
-  transform: scale(1.15);
+  transform: scale(1.1); /* 调整放大比例 */
   z-index: 20;
+
 }
 
 .vip-badge {
