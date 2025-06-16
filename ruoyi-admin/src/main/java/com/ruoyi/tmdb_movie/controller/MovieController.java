@@ -38,7 +38,7 @@ public class MovieController {
     }
 
     @GetMapping("/{movieId}/poster")
-    public ResponseEntity<?> getPosterUrl(@PathVariable Long movieId) {
+    public String getPosterUrl(@PathVariable Integer movieId) {
         String cacheKey = "movie:poster:" + movieId;
         String posterUrl = redisTemplate.opsForValue().get(cacheKey);
 
@@ -47,13 +47,10 @@ public class MovieController {
             if (posterUrl != null) {
                 redisTemplate.opsForValue().set(cacheKey, posterUrl, 1, TimeUnit.DAYS);
             } else {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                        .body("Poster not found for movie ID: " + movieId);
+                return "Not found";
             }
         }
 
-        Map<String, String> result = new HashMap<>();
-        result.put("posterUrl", posterUrl);
-        return ResponseEntity.ok(result);
+        return posterUrl;
     }
 }

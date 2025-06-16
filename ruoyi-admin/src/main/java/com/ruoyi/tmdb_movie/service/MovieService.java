@@ -54,7 +54,7 @@ public class MovieService {
         redisTemplate.delete(REDIS_KEY);
     }
 
-    public String getPosterUrlByMovieId(Long movieId) {
+    public String getPosterUrlByMovieId(Integer movieId) {
         String url = String.format("%s/movie/%d?api_key=%s",
                 tmdbConfig.getBaseUrl(), movieId, tmdbConfig.getApiKey());
 

@@ -35,5 +35,16 @@ export const movieService = {
       // 将错误继续向上抛出
       throw error;
     }
+  },
+
+  async getMoviePosterUrl(id) {
+    try {
+      const response = await axios.get(`${API_BASE_URL}/${id}/poster`);
+      // console.log(response.data);
+      return response.data;
+    } catch (error) {
+      console.error(`Error fetching poster for movie with id ${id}:`, error);
+      throw error;
+    }
   }
 };

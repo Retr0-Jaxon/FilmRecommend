@@ -69,6 +69,7 @@
 </template>
 
 <script>
+import axios from 'axios';
 import { movieService } from '../services/movieService';
 
 export default {
@@ -79,7 +80,7 @@ export default {
       heroContent: {
         title: '纸房子',
         description: '八名盗贼将自己与人质反锁在西班牙皇家造币厂内，他们背后的犯罪首脑则试图操纵警察实现自己的计划…',
-        backgroundImage: 'https://image.tmdb.org/t/p/original/pA4sNvco71n729r5n5Y1xGDHnS6.jpg',
+        backgroundImage: 'https://image.tmdb.org/t/p/w500/pA4sNvco71n729r5n5Y1xGDHnS6.jpg',
       },
       allMovies: [],
       genres: [],
@@ -141,8 +142,11 @@ export default {
       this.$router.push({ name: 'MovieDetail', params: { id: movieId } });
     },
 
-    mapMovieData(movie) {
-      const posterUrl = 'https://via.placeholder.com/500x750.png?text=' + encodeURIComponent(movie.title);
+    async mapMovieData(movie) {
+      const posterUrl = await movieService.getMoviePosterUrl(movie.movie_id); // 假设后端接口需要 movieId
+
+      console.log(posterUrl);
+      
       const movieGenres = movie.genres_Str ? movie.genres_Str.split(',').map(g => g.trim()) : [];
       const movieCountries = movie.countries_Str ? movie.countries_Str.split(',').map(c => c.trim()) : [];
 
@@ -150,7 +154,7 @@ export default {
         id: movie.movie_id,
         title: movie.title,
         posterUrl: posterUrl,
-        isVip: movie.access_Level > 1, // 假设 access_Level > 1 就是VIP
+        isVip: movie.access_Level >= 1, // 假设 access_Level > 1 就是VIP
         playCount: movie.weekly_Popularity || movie.popularity || 0,
         rating: movie.vote_Average || 0,
         genres: movieGenres,
@@ -174,7 +178,10 @@ export default {
       this.loading = true;
       try {
         const rawMovies = await movieService.getList();
-        const mappedMovies = rawMovies.map(this.mapMovieData);
+        const mappedMoviesPromises = rawMovies.map(this.mapMovieData);
+        const mappedMovies = await Promise.all(mappedMoviesPromises);
+        // console.log(mappedMovies);
+        
         const sortedMovies = mappedMovies.sort((a, b) => b.playCount - a.playCount);
         this.allMovies = sortedMovies;
         this.generateFilters(this.allMovies);
