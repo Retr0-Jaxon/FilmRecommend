@@ -19,7 +19,7 @@
       <template v-else >
         <div class="nav-right">
           <template v-if="!isVip">
-            <div class="common" @click="" style="cursor: pointer;">点此成为VIP</div>
+            <div class="common" @click="goToPayment" style="cursor: pointer;">点此成为VIP</div>
           </template>
           <template v-else>
             <div class="vip">你已经是vip了</div>
@@ -42,6 +42,7 @@ import {getToken, removeToken} from "@/utils/auth";
 import {getInfo} from "@/api/login";
 
 
+
 // console.log(this.$store.state.user.roles );
 
 
@@ -51,6 +52,7 @@ export default {
     return { isNavScrolled: false,
     isLoggedIn:false,
       isVip:false,
+      paying:false,
     };
   },
   methods: {
@@ -100,7 +102,7 @@ export default {
       window.removeEventListener('scroll', this.handleScroll);
     }
   },
-  goToPayment() {
+  async goToPayment() {
     // 这里假设你的后端有生成支付订单的接口
     this.$axios.post('/api/payment/create', {
       userId: this.$store.state.user.id, // 当前用户ID
