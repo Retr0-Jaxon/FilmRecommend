@@ -1,4 +1,5 @@
 import Vue from 'vue'
+import Vuex from 'vuex'
 
 import Cookies from 'js-cookie'
 
@@ -58,6 +59,8 @@ Vue.component('ImagePreview', ImagePreview)
 
 Vue.use(directive)
 Vue.use(plugins)
+Vue.use(Vuex)
+
 DictData.install()
 
 /**
@@ -80,4 +83,4 @@ new Vue({
   router,
   store,
   render: h => h(App)
-})
+}).$mount('#app')

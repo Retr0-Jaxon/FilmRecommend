@@ -34,6 +34,10 @@
 import { throttle } from 'lodash-es';
 import {getToken, removeToken} from "@/utils/auth";
 
+
+// console.log(this.$store.state.user.roles );
+
+
 export default {
   name: 'MainLayout',
   data() {

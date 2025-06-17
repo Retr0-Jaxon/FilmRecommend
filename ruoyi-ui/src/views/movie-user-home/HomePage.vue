@@ -69,8 +69,11 @@
 </template>
 
 <script>
-import axios from 'axios';
+import { getInfo } from '@/api/login';
 import { movieService } from '../services/movieService';
+import {getToken} from "@/utils/auth";
+
+
 
 export default {
   name: 'HomePage',
@@ -145,7 +148,7 @@ export default {
     async mapMovieData(movie) {
       const posterUrl = await movieService.getMoviePosterUrl(movie.movie_id); // 假设后端接口需要 movieId
 
-      console.log(posterUrl);
+      // console.log(posterUrl);
 
       const movieGenres = movie.genres_Str ? movie.genres_Str.split(',').map(g => g.trim()) : [];
       const movieCountries = movie.countries_Str ? movie.countries_Str.split(',').map(c => c.trim()) : [];
@@ -192,8 +195,15 @@ export default {
       }
     }
   },
-  created() {
+  created() {   
     this.fetchData();
+    if (getToken()) {
+      getInfo().then(res => {
+      console.log("当前用户roles:", res.user.roles[0].roleId);
+        });
+    }
+    // console.log('当前用户角色:', JSON.stringify(this.$store.state.user.roles));
+
   },
 };
 </script>
