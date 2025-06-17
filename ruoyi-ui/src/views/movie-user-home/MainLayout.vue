@@ -18,7 +18,13 @@
       </template>
       <template v-else >
         <div class="nav-right">
-          <button class="logout" @click="handleLogout" aria-label="退出登录">退出登录</button>
+          <template v-if="!isVip">
+            <div class="common" @click="" style="cursor: pointer;">点此成为VIP</div>
+          </template>
+          <template v-else>
+            <div class="vip">你已经是vip了</div>
+          </template>
+            <button class="logout" @click="handleLogout" aria-label="退出登录">退出登录</button>
         </div>
 
       </template>
@@ -33,6 +39,7 @@
 <script>
 import { throttle } from 'lodash-es';
 import {getToken, removeToken} from "@/utils/auth";
+import {getInfo} from "@/api/login";
 
 
 // console.log(this.$store.state.user.roles );
@@ -42,7 +49,8 @@ export default {
   name: 'MainLayout',
   data() {
     return { isNavScrolled: false,
-    isLoggedIn:false
+    isLoggedIn:false,
+      isVip:false,
     };
   },
   methods: {
@@ -50,7 +58,22 @@ export default {
       this.isNavScrolled = window.scrollY > 10;
     }, 100),
     checkLoginStatus() {
-      this.isLoggedIn = !!getToken(); // 检查是否有token
+      this.isLoggedIn = !!getToken();
+      if (this.isLoggedIn) {
+        this.checkVipStatus();  // 如果已登录，检查VIP状态
+      } else {
+        this.isVip = false;  // 未登录则重置VIP状态
+      }
+    },
+    async checkVipStatus() {
+      try {
+        const response = await getInfo();
+        // 假设返回数据结构：{ user: { roles: [{ roleId: 数字 }] } }
+        this.isVip = response.user.roles.some(role => role.roleId === 101);
+      } catch (error) {
+        console.error('检查VIP状态出错:', error);
+        this.isVip = false;
+      }
     },
     handleLogout() {
       this.$confirm('确定注销并退出系统吗？', '提示', {
@@ -59,6 +82,8 @@ export default {
         type: 'warning'
       }).then(() => {
         this.$store.dispatch('LogOut').then(() => {
+          this.isLoggedIn=false;
+          this.isVip=false;
           location.href = '';
         })
       }).catch(() => {});
@@ -75,6 +100,28 @@ export default {
       window.removeEventListener('scroll', this.handleScroll);
     }
   },
+  goToPayment() {
+    // 这里假设你的后端有生成支付订单的接口
+    this.$axios.post('/api/payment/create', {
+      userId: this.$store.state.user.id, // 当前用户ID
+      productType: 'VIP' // 购买的产品类型
+    })
+      .then(response => {
+        // 假设后端返回支付页面的URL
+        const paymentUrl = response.data.paymentUrl
+
+        // 跳转到支付宝沙箱支付页面
+        window.location.href = paymentUrl
+
+        // 或者在新窗口打开
+        // window.open(paymentUrl, '_blank')
+      })
+      .catch(error => {
+        console.error('支付请求失败:', error)
+        this.$message.error('支付请求失败，请稍后重试')
+      })
+  },
+
   watch: {
     // 监听路由变化，检查登录状态
     '$route': 'checkLoginStatus'
@@ -157,7 +204,26 @@ export default {
 .login{
   background: #e50914;
 }
+.common {
+  padding: 8px 16px;
+  background: linear-gradient(135deg, #ffd700, #ff9500);
+  color: white;
+  border-radius: 4px;
+  font-weight: bold;
+  transition: all 0.3s;
+}
 
+.common:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+.vip{
+  background-image: linear-gradient(to right, gold, #b400ff);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  font-weight: bold;
+}
 /* 确保内容区域不会被固定的导航栏遮挡 */
 .content-area {
   padding-top: 68px;
