@@ -131,3 +131,13 @@ xss:
 tmdb:
   api-key: 8194a45a93d91c8b94ba5f79fa74ca53
   base-url: https://api.tmdb.org/3
+
+alipay:
+  app-id: 你的沙箱APPID
+  merchant-private-key: 你的应用私钥
+  alipay-public-key: 支付宝公钥
+  notify-url: http://你的公网地址/alipay/notify  # 异步通知地址
+  return-url: http://你的公网地址/alipay/return  # 同步跳转地址
+  gateway-url: https://openapi-sandbox.dl.alipaydev.com/gateway.do  # 沙箱网关
+  sign-type: RSA2
+  charset: UTF-8
