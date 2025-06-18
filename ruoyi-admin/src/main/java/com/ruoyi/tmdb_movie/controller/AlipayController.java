@@ -6,16 +6,24 @@ import com.alipay.api.AlipayClient;
 import com.alipay.api.DefaultAlipayClient;
 import com.alipay.api.internal.util.AlipaySignature;
 import com.alipay.api.request.AlipayTradePagePayRequest;
+import com.ruoyi.common.core.domain.entity.SysUser;
+import com.ruoyi.common.core.domain.model.LoginUser;
+import com.ruoyi.common.utils.SecurityUtils;
 import com.ruoyi.framework.web.domain.server.Sys;
+import com.ruoyi.framework.web.service.PermissionService;
+import com.ruoyi.framework.web.service.SysPermissionService;
+import com.ruoyi.framework.web.service.TokenService;
 import com.ruoyi.tmdb_movie.config.AlipayConfig;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
-
+import com.ruoyi.system.service.ISysUserService;
+import com.ruoyi.common.core.controller.BaseController;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
 @RestController
 @RequestMapping("/alipay")
@@ -23,6 +31,12 @@ public class AlipayController {
 
     @Autowired
     private AlipayConfig alipayConfig;
+    @Autowired
+    private ISysUserService userService;
+    @Autowired
+    private SysPermissionService permissionService;
+    @Autowired
+    private TokenService tokenService;
 
     @GetMapping("/pay")
     public void pay(@RequestParam String outTradeNo,
@@ -79,9 +93,40 @@ public class AlipayController {
         );
 
         if (signVerified && "TRADE_SUCCESS".equals(params.get("trade_status"))) {
-            String outTradeNo = params.get("out_trade_no");
-            // TODO: 更新vip状态
-            return "success"; // 通知支付宝已处理
+            try {
+                // 从订单号中获取用户ID - 需要确保订单号包含用户ID信息
+                String outTradeNo = params.get("out_trade_no");
+
+                // 假设订单号格式为 "用户ID_时间戳" 或其他包含用户ID的格式
+                // 例如: "12345_202506190001" 表示用户ID为12345
+                String[] parts = outTradeNo.split("_");
+                if(parts.length == 0) {
+                    System.err.println("订单号格式不正确，无法提取用户ID");
+                    return "fail";
+                }
+                Long userId = Long.parseLong(parts[0]); // 解析用户ID
+                // 更新用户角色为VIP(101)
+                int result = userService.updateUserRole(userId, 101L);
+//                SysUser user=userService.selectUserById(userId);
+//                LoginUser loginUser=new LoginUser();
+//                loginUser.setUser(user);
+//
+//                // 权限集合
+//                Set<String> permissions = permissionService.getMenuPermission(user);
+//                loginUser.setPermissions(permissions);
+//                tokenService.refreshToken(loginUser);
+
+                if(result > 0) {
+                    System.out.println("用户ID: "  + " 角色更新成功");
+                } else {
+                    System.out.println("用户ID: "  + " 角色更新失败");
+                }
+
+                return "success";
+            } catch (Exception e) {
+                System.err.println("处理支付回调异常: " + e.getMessage());
+                return "fail";
+            }
         }
         return "fail"; // 验证失败
     }
