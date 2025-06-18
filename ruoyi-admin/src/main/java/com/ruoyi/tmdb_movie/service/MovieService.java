@@ -91,4 +91,8 @@ public class MovieService {
 
         return movie;
     }
+
+    public List<Movie> getMoviesOrderByPopularityDesc() {
+        return movieMapper.selectMoviesOrderByPopularityDesc();
+    }
 }

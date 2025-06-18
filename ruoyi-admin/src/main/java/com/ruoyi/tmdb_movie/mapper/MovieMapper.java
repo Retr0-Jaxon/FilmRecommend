@@ -13,4 +13,9 @@ public interface MovieMapper {
 
     @Select("SELECT * FROM tmdb_movies WHERE movie_id = #{movieId}")
     Movie getMovieById(@Param("movieId") Integer movieId);
+
+    @Select("SELECT movie_id, title, popularity " +
+            "FROM tmdb_movies " +
+            "ORDER BY popularity DESC")
+    List<Movie> selectMoviesOrderByPopularityDesc();
 }
