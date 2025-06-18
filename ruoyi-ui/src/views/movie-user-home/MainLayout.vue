@@ -40,6 +40,7 @@
 import { throttle } from 'lodash-es';
 import {getToken, removeToken} from "@/utils/auth";
 import {getInfo} from "@/api/login";
+import axios from 'axios';
 
 
 
@@ -56,6 +57,25 @@ export default {
     };
   },
   methods: {
+    async goToPayment() {
+      // 这里假设你的后端有生成支付订单的接口
+        const randomOutTradeNo = Math.floor(Math.random() * 1000000);
+        const url = `http://localhost:8080/alipay/pay?outTradeNo=${randomOutTradeNo}&totalAmount=88.88&subject=VIPOrder`;
+        axios.get(url)
+        .then(response => {
+        
+        const paymentUrl = url
+
+        // 跳转到支付宝沙箱支付页面
+        window.location.href = paymentUrl
+
+        // 或者在新窗口打开
+        // window.open(paymentUrl, '_blank')
+      }).catch(error => {
+        console.error('支付请求失败:', error)
+        this.$message.error('支付请求失败，请稍后重试')
+      })
+    },
     handleScroll: throttle(function() {
       this.isNavScrolled = window.scrollY > 10;
     }, 100),
@@ -102,29 +122,7 @@ export default {
       window.removeEventListener('scroll', this.handleScroll);
     }
   },
-  async goToPayment() {
-    // 这里假设你的后端有生成支付订单的接口
-    this.$axios.post('/api/payment/create', {
-      userId: this.$store.state.user.id, // 当前用户ID
-      productType: 'VIP' // 购买的产品类型
-    })
-      .then(response => {
-        // 假设后端返回支付页面的URL
-        const paymentUrl = response.data.paymentUrl
-
-        // 跳转到支付宝沙箱支付页面
-        window.location.href = paymentUrl
-
-        // 或者在新窗口打开
-        // window.open(paymentUrl, '_blank')
-      })
-      .catch(error => {
-        console.error('支付请求失败:', error)
-        this.$message.error('支付请求失败，请稍后重试')
-      })
-  },
-
-  watch: {
+    watch: {
     // 监听路由变化，检查登录状态
     '$route': 'checkLoginStatus'
   }

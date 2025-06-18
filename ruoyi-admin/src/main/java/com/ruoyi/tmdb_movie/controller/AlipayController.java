@@ -6,6 +6,7 @@ import com.alipay.api.AlipayClient;
 import com.alipay.api.DefaultAlipayClient;
 import com.alipay.api.internal.util.AlipaySignature;
 import com.alipay.api.request.AlipayTradePagePayRequest;
+import com.ruoyi.framework.web.domain.server.Sys;
 import com.ruoyi.tmdb_movie.config.AlipayConfig;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
@@ -67,6 +68,7 @@ public class AlipayController {
     public String notify(HttpServletRequest request) throws AlipayApiException {
         // 将异步通知的参数转换为Map
         Map<String, String> params = convertRequestParamsToMap(request);
+        System.out.println(params);
 
         // 验证签名
         boolean signVerified = AlipaySignature.rsaCheckV1(
@@ -98,4 +100,22 @@ public class AlipayController {
         }
         return params;
     }
+
+//    @GetMapping("/return")
+//    public void returnCallback(HttpServletRequest request, HttpServletResponse response)
+//            throws AlipayApiException, IOException {
+//
+//        // 1. 验证签名（可选，建议保留）
+//        Map<String, String> params = convertRequestParamsToMap(request);
+//        boolean signVerified = AlipaySignature.rsaCheckV1(
+//                params,
+//                alipayConfig.getAlipayPublicKey(),
+//                alipayConfig.getCharset(),
+//                alipayConfig.getSignType()
+//        );
+//
+//        // 2. 直接重定向到前端主页
+//        response.sendRedirect("http://localhost:81");
+//        // 或本地测试用：response.sendRedirect("http://localhost:3000");
+//    }
 }
