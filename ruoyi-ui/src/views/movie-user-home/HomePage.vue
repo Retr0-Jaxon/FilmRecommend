@@ -199,7 +199,7 @@ export default {
     this.fetchData();
     if (getToken()) {
       getInfo().then(res => {
-      console.log("当前用户roles:", res.user.roles[0].roleId);
+      console.log("当前用户roles:", res.user.userId);
         });
     }
     // console.log('当前用户角色:', JSON.stringify(this.$store.state.user.roles));
