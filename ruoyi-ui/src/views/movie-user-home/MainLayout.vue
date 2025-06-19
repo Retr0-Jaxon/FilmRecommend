@@ -59,11 +59,17 @@ export default {
   methods: {
     async goToPayment() {
       // 这里假设你的后端有生成支付订单的接口
-        const randomOutTradeNo = Math.floor(Math.random() * 1000000);
-        const url = `http://localhost:8080/alipay/pay?outTradeNo=${randomOutTradeNo}&totalAmount=88.88&subject=VIPOrder`;
+      // 1. 获取用户ID
+      const userInfo = await getInfo(); // 确保等待异步完成
+      const userId = userInfo.user.userId;
+
+      // 2. 生成订单号
+      const timestamp = new Date().getTime();
+      const outTradeNo = `${userId}_${timestamp}`; // 用户ID_时间戳
+        const url = `http://localhost:8080/alipay/pay?outTradeNo=${outTradeNo}&totalAmount=88.88&subject=VIPOrder`;
         axios.get(url)
         .then(response => {
-        
+
         const paymentUrl = url
 
         // 跳转到支付宝沙箱支付页面

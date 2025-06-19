@@ -195,7 +195,7 @@ export default {
       }
     }
   },
-  created() {   
+  created() {
     this.fetchData();
     if (getToken()) {
       getInfo().then(res => {

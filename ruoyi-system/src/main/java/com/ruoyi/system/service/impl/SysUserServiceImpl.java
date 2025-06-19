@@ -547,4 +547,9 @@ public class SysUserServiceImpl implements ISysUserService
         }
         return successMsg.toString();
     }
+    @Override
+    public int updateUserRole(Long userId, Long roleId){
+        userRoleMapper.deleteUserRoleByUserId(userId);
+        return userRoleMapper.insertUserRole(userId,roleId);
+    }
 }
