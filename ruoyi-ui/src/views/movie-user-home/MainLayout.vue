@@ -71,6 +71,7 @@ export default {
         .then(response => {
 
         const paymentUrl = url
+          removeToken()
 
 
         // 跳转到支付宝沙箱支付页面
