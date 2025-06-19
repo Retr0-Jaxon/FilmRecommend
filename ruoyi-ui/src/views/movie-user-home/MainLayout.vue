@@ -52,7 +52,7 @@ export default {
   data() {
     return { isNavScrolled: false,
     isLoggedIn:false,
-      isVip:false,
+      isVip:true,
       paying:false,
     };
   },
@@ -72,8 +72,12 @@ export default {
 
         const paymentUrl = url
 
+
         // 跳转到支付宝沙箱支付页面
         window.location.href = paymentUrl
+
+
+
 
         // 或者在新窗口打开
         // window.open(paymentUrl, '_blank')

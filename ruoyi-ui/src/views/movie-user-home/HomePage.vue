@@ -28,7 +28,7 @@
           </h2>
           <div class="thumbnails-container">
             <!-- 【修改】添加点击事件以跳转到详情页 -->
-            <div class="thumbnail" v-for="item in hotMovies" :key="item.id" @click="goToDetailPage(item.id)">
+            <div class="thumbnail" v-for="item in hotMovies" :key="item.id" @click="goToDetailPage(item.id,item.isVip)">
               <img :src="item.posterUrl" :alt="item.title">
               <span v-if="item.isVip" class="vip-badge">VIP</span>
             </div>
@@ -43,7 +43,7 @@
           </h2>
           <div class="thumbnails-container">
             <!-- 【修改】添加点击事件以跳转到详情页 -->
-            <div class="thumbnail" v-for="item in moviesByGenre[genre.key]" :key="item.id" @click="goToDetailPage(item.id)">
+            <div class="thumbnail" v-for="item in moviesByGenre[genre.key]" :key="item.id" @click="goToDetailPage(item.id,item.isVip)">
               <img :src="item.posterUrl" :alt="item.title">
               <span v-if="item.isVip" class="vip-badge">VIP</span>
             </div>
@@ -57,7 +57,7 @@
           </h2>
           <div class="thumbnails-container">
             <!-- 【修改】添加点击事件以跳转到详情页 -->
-            <div class="thumbnail" v-for="item in moviesByRegion[region.key]" :key="item.id" @click="goToDetailPage(item.id)">
+            <div class="thumbnail" v-for="item in moviesByRegion[region.key]" :key="item.id" @click="goToDetailPage(item.id,item.isVip)">
               <img :src="item.posterUrl" :alt="item.title">
               <span v-if="item.isVip" class="vip-badge">VIP</span>
             </div>
@@ -83,11 +83,12 @@ export default {
       heroContent: {
         title: '纸房子',
         description: '八名盗贼将自己与人质反锁在西班牙皇家造币厂内，他们背后的犯罪首脑则试图操纵警察实现自己的计划…',
-        backgroundImage: 'https://image.tmdb.org/t/p/w500/pA4sNvco71n729r5n5Y1xGDHnS6.jpg',
+        backgroundImage: 'https://www.themoviedb.org/t/p/w600_and_h900_bestv2/uERpj31xcXGxInZoC5EUSM92Sqv.jpg',
       },
       allMovies: [],
       genres: [],
       regions: [],
+      isVip:false,
     };
   },
   computed: {
@@ -138,11 +139,30 @@ export default {
 
     /**
      * 【新增】跳转到电影详情页
-     * @param {number} movieId - 电影的ID
+     * @param movieId
+     * @param movieIsVip
      */
-    goToDetailPage(movieId) {
+    async goToDetailPage(movieId,movieIsVip) {
       // 确保你的详情页路由名为 'MovieDetail'
-      this.$router.push({ name: 'MovieDetail', params: { id: movieId } });
+
+      if (movieIsVip){
+        try {
+          const response = await getInfo();
+          // 假设返回数据结构：{ user: { roles: [{ roleId: 数字 }] } }
+          this.isVip = response.user.roles.some(role => role.roleId === 101);
+        } catch (error) {
+          console.error('检查VIP状态出错:', error);
+          this.isVip = false;
+        }
+        if (this.isVip){
+
+          this.$router.push({ name: 'MovieDetail', params: { id: movieId } });
+        }else {
+          alert("你还不是VIP，请充值！");
+        }
+      }else {
+        this.$router.push({ name: 'MovieDetail', params: { id: movieId } });
+      }
     },
 
     async mapMovieData(movie) {
@@ -199,7 +219,7 @@ export default {
     this.fetchData();
     if (getToken()) {
       getInfo().then(res => {
-      console.log("当前用户roles:", res.user.userId);
+      console.log("当前用户roles:", res.user.id);
         });
     }
     // console.log('当前用户角色:', JSON.stringify(this.$store.state.user.roles));
