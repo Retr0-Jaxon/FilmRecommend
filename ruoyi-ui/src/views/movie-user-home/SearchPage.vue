@@ -32,12 +32,13 @@
         <!-- 搜索结果列表 (迭代 paginatedMovies) -->
         <transition-group v-if="paginatedMovies.length > 0" name="list-fade" tag="ul" class="search-results-list">
           <!-- 【修改 1】: 添加 @click 事件，使整行可点击跳转 -->
-          <li v-for="movie in paginatedMovies" :key="movie.id" class="result-item" @click="goToDetail(movie.id)">
+          <li v-for="movie in paginatedMovies" :key="movie.id" class="result-item" @click="goToDetailPage(movie.id,movie.isVip)">
             <img :src="movie.posterUrl" :alt="movie.title" class="poster" />
             <div class="movie-details">
               <h3 class="movie-title">
                 {{ movie.title }}
                 <span v-if="movie.isVip" class="vip-badge-inline">VIP</span>
+                
               </h3>
               <div class="movie-info">
                 <!-- 【修改 2】: 将导演名字变为可点击的链接 -->
@@ -51,7 +52,7 @@
               </div>
             </div>
             <!-- 【修改 3】: 给播放按钮添加 .stop 修饰符，防止点击它时触发整行跳转 -->
-            <button @click.stop="playMovie(movie)" class="play-btn">▶ 播放</button>
+            <!-- <button @click.stop="playMovie(movie)" class="play-btn">▶ 播放</button> -->
           </li>
         </transition-group>
 
@@ -72,6 +73,8 @@
 </template>
 
 <script>
+import { getInfo } from '@/api/login';
+import axios from 'axios';
 import { movieService } from '../services/movieService';
 
 export default {
@@ -111,22 +114,25 @@ export default {
       this.loading = true;
       try {
         const rawMovies = await movieService.getList();
-        this.allMovies = rawMovies.map(this.mapMovieData);
+        this.allMoviesPromise = rawMovies.map(this.mapMovieData);
+        this.allMovies = await Promise.all(this.allMoviesPromise);
       } catch (error) {
         console.error("搜索页面获取数据失败:", error);
       } finally {
         this.loading = false;
       }
     },
-    mapMovieData(movie) {
+    async mapMovieData(movie) {
       const movieGenres = movie.genres_Str ? movie.genres_Str.split(',').map(g => g.trim()) : [];
+      var posterUrl = await movieService.getMoviePosterUrl(movie.movie_id)
       return {
         id: movie.movie_id,
         title: movie.title,
         director: movie.director || '未知',
-        isVip: movie.access_Level > 1,
+        isVip: movie.access_Level >= 1,
         genres: movieGenres,
-        posterUrl: 'https://via.placeholder.com/200x300.png?text=' + encodeURIComponent(movie.title),
+        // posterUrl: 'https://via.placeholder.com/200x300.png?text=' + encodeURIComponent(movie.title),
+        posterUrl: posterUrl,
       };
     },
     nextPage() {
@@ -146,9 +152,27 @@ export default {
      * 【新增】跳转到电影详情页
      * @param {number} movieId - 电影的ID
      */
-    goToDetail(movieId) {
-      // 假设你的详情页路由名为 'MovieDetail'
-      this.$router.push({ name: 'MovieDetail', params: { id: movieId } });
+     async goToDetailPage(movieId,movieIsVip) {
+      // 确保你的详情页路由名为 'MovieDetail'
+
+      if (movieIsVip){
+        try {
+          const response = await getInfo();
+          // 假设返回数据结构：{ user: { roles: [{ roleId: 数字 }] } }
+          this.isVip = response.user.roles.some(role => role.roleId === 101);
+        } catch (error) {
+          console.error('检查VIP状态出错:', error);
+          this.isVip = false;
+        }
+        if (this.isVip){
+
+          this.$router.push({ name: 'MovieDetail', params: { id: movieId } });
+        }else {
+          alert("你还不是VIP，请充值！");
+        }
+      }else {
+        this.$router.push({ name: 'MovieDetail', params: { id: movieId } });
+      }
     },
 
     /**
@@ -188,6 +212,8 @@ export default {
 
 <style scoped>
 /* 【新增样式】 */
+
+
 .result-item {
   transition: background-color 0.2s ease-in-out;
   cursor: pointer; /* 提示用户这是可点击的 */
@@ -216,7 +242,7 @@ export default {
 .loading-spinner { border: 5px solid #333; border-top: 5px solid #e50914; border-radius: 50%; width: 50px; height: 50px; animation: spin 1s linear infinite; margin-bottom: 1rem; }
 @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 .search-page-content { padding: 2rem 4rem; }
-.search-header h1 { font-size: 2.5rem; margin-bottom: 1.5rem; }
+.search-header h1 { font-size: 2.5rem; margin-bottom: 1.5rem; color: floralwhite;}
 .search-input-wrapper { position: relative; }
 .search-icon { position: absolute; left: 1rem; top: 50%; transform: translateY(-50%); width: 1.5rem; height: 1.5rem; color: #8c8c8c; }
 .search-input { width: 100%; background-color: #333; border: 1px solid #555; border-radius: 4px; padding: 1rem 1rem 1rem 3.5rem; color: #fff; font-size: 1.2rem; }
@@ -226,9 +252,9 @@ export default {
 .result-item { display: flex; align-items: center; background-color: #1f1f1f; border-radius: 4px; margin-bottom: 1rem; padding: 1rem; }
 .poster { width: 80px; height: 120px; object-fit: cover; border-radius: 4px; margin-right: 1.5rem; }
 .movie-details { flex-grow: 1; }
-.movie-title { font-size: 1.4rem; margin-bottom: 0.5rem; }
+h3.movie-title { font-size: 1.4rem; margin-bottom: 0.5rem; color: floralwhite}
 .movie-info { color: #8c8c8c; display: flex; flex-direction: column; gap: 0.3rem; }
-.vip-badge-inline { font-size: 0.8rem; background-color: #e50914; color: #fff; padding: 2px 6px; border-radius: 3px; margin-left: 0.5rem; vertical-align: middle; }
+.vip-badge-inline{background-color:gold;color:#141414;padding:2px 6px;border-radius:4px;font-size:.7rem;font-weight:700}
 .play-btn { background-color: #e50914; color: #fff; border: none; padding: 0.6rem 1.2rem; border-radius: 4px; cursor: pointer; font-size: 1rem; font-weight: bold; margin-left: auto; }
 .list-fade-enter-active, .list-fade-leave-active { transition: opacity 0.5s; }
 .list-fade-enter, .list-fade-leave-to { opacity: 0; }

@@ -57,7 +57,7 @@
     <div v-else class="ranking-list-container">
       <transition-group name="list-fade" tag="ol" class="ranking-list">
         <!-- 【修改 1】: 在 li 上添加点击事件，用于跳转 -->
-        <li v-for="(movie, index) in rankedMovies" :key="movie.id" class="ranking-item" @click="goToDetailPage(movie.id)">
+        <li v-for="(movie, index) in rankedMovies" :key="movie.id" class="ranking-item" @click="goToDetailPage(movie.id,movie.isVip)">
           <span :class="['rank-number', { 'top-3': index < 3 }]">{{ index + 1 }}</span>
           <img :src="movie.posterUrl" :alt="movie.title" class="poster" />
           <div class="movie-details">
@@ -69,7 +69,7 @@
             <div class="movie-meta"><span>{{ movie.region }}</span> | <span>{{ movie.genres.join(' / ') }}</span></div>
           </div>
           <!-- 【修改 2】: 给播放按钮添加 .stop 修饰符的点击事件 -->
-          <button @click.stop="playMovie(movie)" class="play-btn">播放</button>
+          <!-- <button @click.stop="playMovie(movie)" class="play-btn">播放</button> -->
         </li>
       </transition-group>
       <div v-if="rankedMovies.length === 0" class="no-results"><p>暂无符合条件的影片</p></div>
@@ -78,6 +78,7 @@
 </template>
 
 <script>
+import { getInfo } from '@/api/login';
 import { movieService } from '../services/movieService';
 
 export default {
@@ -132,9 +133,29 @@ export default {
      * 【新增】跳转到电影详情页
      * @param {number} movieId - 电影的ID
      */
-    goToDetailPage(movieId) {
+     async goToDetailPage(movieId,movieIsVip) {
       // 确保你的详情页路由名为 'MovieDetail'
-      this.$router.push({ name: 'MovieDetail', params: { id: movieId } });
+
+      if (movieIsVip){
+        try {
+          const response = await getInfo();
+          // 假设返回数据结构：{ user: { roles: [{ roleId: 数字 }] } }
+          this.isVip = response.user.roles.some(role => role.roleId === 101);
+        } catch (error) {
+          console.error('检查VIP状态出错:', error);
+          this.isVip = false;
+        }
+        if (this.isVip){
+
+          this.$router.push({ name: 'MovieDetail', params: { id: movieId } });
+        }else {
+          console.log("not vip");
+          
+          alert("你还不是VIP，请充值！");
+        }
+      }else {
+        this.$router.push({ name: 'MovieDetail', params: { id: movieId } });
+      }
     },
 
     /**
@@ -266,5 +287,7 @@ export default {
   color: #ffffff;
   font-weight: bold;
 }
-.loading-container{display:flex;justify-content:center;padding-top:5rem}.loading-spinner{border:5px solid #333;border-top:5px solid #e50914;border-radius:50%;width:50px;height:50px;animation:spin 1s linear infinite}@keyframes spin{0%{transform:rotate(0)}100%{transform:rotate(360deg)}}.ranking-list{list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:1rem}.ranking-item{display:flex;align-items:center;gap:1.5rem;background-color:#1c1c1c;padding:1rem;border-radius:8px;transition:all .3s ease-in-out;border:1px solid transparent}.ranking-item:hover{background-color:#252525;transform:translateY(-5px);border-color:#444}.rank-number{font-size:2.2rem;font-weight:700;color:#666;width:50px;text-align:center;flex-shrink:0;font-style:italic}.rank-number.top-3{color:#e50914}.poster{width:80px;height:120px;object-fit:cover;border-radius:4px;flex-shrink:0}.movie-details{flex-grow:1}.movie-title{margin:0 0 .5rem;font-size:1.2rem;color:#fff;display:flex;align-items:center;gap:.5rem}.movie-info{display:flex;gap:1rem;font-size:.9rem;margin-bottom:.5rem}.info-rating{color:#f5c518;font-weight:700}.info-plays{color:#b3b3b3}.movie-meta{font-size:.8rem;color:#8c8c8c}.play-btn{background-color:#e50914;color:#fff;border:none;padding:.6rem 1.2rem;border-radius:4px;font-weight:700;cursor:pointer;transition:opacity .3s}.play-btn:hover{opacity:.8}.no-results{text-align:center;padding:4rem;color:#8c8c8c;font-size:1.2rem}.vip-badge-inline{background-color:gold;color:#141414;padding:2px 6px;border-radius:4px;font-size:.7rem;font-weight:700}.list-fade-enter-active,.list-fade-leave-active{transition:all .5s}.list-fade-enter,.list-fade-leave-to{opacity:0;transform:translateY(20px)}@media (max-width:768px){.ranking-page-content{padding:1rem 1.5rem}.filter-group{flex-direction:column;align-items:flex-start}.filter-label{text-align:left;margin-bottom:.5rem}.filter-btn{width:100%;text-align:center}}
+.loading-container{display:flex;justify-content:center;padding-top:5rem}.loading-spinner{border:5px solid #333;border-top:5px solid #e50914;border-radius:50%;width:50px;height:50px;animation:spin 1s linear infinite}@keyframes spin{0%{transform:rotate(0)}100%{transform:rotate(360deg)}}.ranking-list{list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:1rem}.ranking-item{display:flex;align-items:center;gap:1.5rem;background-color:#1c1c1c;padding:1rem;border-radius:8px;transition:all .3s ease-in-out;border:1px solid transparent}.ranking-item:hover{background-color:#252525;transform:translateY(-5px);border-color:#444}.rank-number{font-size:2.2rem;font-weight:700;color:#666;width:50px;text-align:center;flex-shrink:0;font-style:italic}.rank-number.top-3{color:#e50914}.poster{width:80px;height:120px;object-fit:cover;border-radius:4px;flex-shrink:0}.movie-details{flex-grow:1}.movie-title{margin:0 0 .5rem;font-size:1.2rem;color:#fff;display:flex;align-items:center;gap:.5rem}.movie-info{display:flex;gap:1rem;font-size:.9rem;margin-bottom:.5rem}.info-rating{color:#f5c518;font-weight:700}.info-plays{color:#b3b3b3}.movie-meta{font-size:.8rem;color:#8c8c8c}.play-btn{background-color:#e50914;color:#fff;border:none;padding:.6rem 1.2rem;border-radius:4px;font-weight:700;cursor:pointer;transition:opacity .3s}.play-btn:hover{opacity:.8}.no-results{text-align:center;padding:4rem;color:#8c8c8c;font-size:1.2rem}
+.vip-badge-inline{background-color:gold;color:#141414;padding:2px 6px;border-radius:4px;font-size:.7rem;font-weight:700}
+.list-fade-enter-active,.list-fade-leave-active{transition:all .5s}.list-fade-enter,.list-fade-leave-to{opacity:0;transform:translateY(20px)}@media (max-width:768px){.ranking-page-content{padding:1rem 1.5rem}.filter-group{flex-direction:column;align-items:flex-start}.filter-label{text-align:left;margin-bottom:.5rem}.filter-btn{width:100%;text-align:center}}
 </style>

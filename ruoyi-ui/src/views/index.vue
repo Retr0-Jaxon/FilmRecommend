@@ -25,9 +25,16 @@
               @click="refreshVoteChart">
               刷新
             </el-button>
+            
           </template>
           <div v-loading="voteLoading" ref="voteChart" style="height:400px"></div>
         </el-card>
+        <el-row :gutter="20" style="margin-top: 20px;"> <!-- 添加顶部边距 -->
+          <!-- // 假设之前有其他按钮，可添加在这里 -->
+          <el-col :span="6">
+            <el-button type="primary" @click="downloadPoiReport" style="width: 100%;">下载播放榜单报表</el-button>
+          </el-col>
+        </el-row>
       </el-col>
 
       <!-- 类型词云图表 -->
@@ -207,6 +214,9 @@ export default {
       this.loadVoteData().finally(() => {
         this.voteLoading = false
       })
+    },
+    downloadPoiReport() {
+      window.location.href = 'http://localhost:8080/api/report/exportSimple';
     }
   },
   beforeDestroy() {

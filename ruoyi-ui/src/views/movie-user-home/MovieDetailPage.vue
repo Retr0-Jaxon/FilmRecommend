@@ -73,9 +73,9 @@ export default {
     };
   },
   computed: {
-    posterUrl() {
+    // posterUrl() {
       
-    }
+    // }
   },
   methods: {
     async fetchMovieData() {
@@ -109,6 +109,7 @@ export default {
 </script>
 
 <style scoped>
+
 .movie-detail-page {
   padding: 2rem 4rem;
   max-width: 1200px;
@@ -205,5 +206,20 @@ export default {
   margin-right: 1.5rem;
   color: #8c8c8c;
 }
+
+.popularity-stats h4 {
+  margin-right: 1.5rem;
+  color: #8c8c8c;
+}
+
 .vip-badge-inline { font-size: 1rem; background-color: #e50914; color: #fff; padding: 4px 8px; border-radius: 3px; margin-left: 0.5rem; vertical-align: middle; }
+
+
+.detail-title {
+  color: #ffffff; 
+}
+
+.overview-title{
+  color: #ffffff; 
+}
 </style>

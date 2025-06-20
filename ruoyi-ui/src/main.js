@@ -74,6 +74,8 @@ DictData.install()
  * please remove it before going online! ! !
  */
 
+document.body.style.backgroundColor = '#282828'
+
 Vue.use(Element, {
   size: Cookies.get('size') || 'medium' // set element-ui default size
 })

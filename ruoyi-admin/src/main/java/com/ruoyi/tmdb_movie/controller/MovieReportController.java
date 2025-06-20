@@ -27,7 +27,7 @@ public class MovieReportController extends BaseController {
             List<Movie> movieList = movieService.getMoviesOrderByPopularityDesc();
 
             Workbook workbook = new XSSFWorkbook();
-            Sheet sheet = workbook.createSheet("电影热度排行");
+            Sheet sheet = workbook.createSheet("电影播放排行");
 
             // 设置表头样式
             CellStyle headerStyle = workbook.createCellStyle();
@@ -37,7 +37,7 @@ public class MovieReportController extends BaseController {
 
             // 创建表头
             Row headerRow = sheet.createRow(0);
-            String[] headers = {"电影ID", "电影名称", "实时热度"};
+            String[] headers = {"电影ID", "电影名称", "播放数"};
             for (int i = 0; i < headers.length; i++) {
                 Cell cell = headerRow.createCell(i);
                 cell.setCellValue(headers[i]);
@@ -50,7 +50,7 @@ public class MovieReportController extends BaseController {
                 Row row = sheet.createRow(rowNum++);
                 row.createCell(0).setCellValue(movie.getMovie_id());
                 row.createCell(1).setCellValue(movie.getTitle());
-                row.createCell(2).setCellValue(movie.getPopularity());
+                row.createCell(2).setCellValue((int) Math.round(movie.getPopularity()));
             }
 
             // 自动调整列宽
