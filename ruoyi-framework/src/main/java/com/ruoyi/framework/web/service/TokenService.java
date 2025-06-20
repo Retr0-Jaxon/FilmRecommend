@@ -229,4 +229,13 @@ public class TokenService
     {
         return CacheConstants.LOGIN_TOKEN_KEY + uuid;
     }
+
+    public String getParseToken(String token){
+        Claims claims = parseToken(token);
+        // 解析对应的权限以及用户信息
+        String uuid = (String) claims.get(Constants.LOGIN_USER_KEY);
+        return getTokenKey(uuid);
+
+    }
+
 }

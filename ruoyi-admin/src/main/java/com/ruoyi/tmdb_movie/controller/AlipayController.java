@@ -82,7 +82,7 @@ public class AlipayController {
     public String notify(HttpServletRequest request) throws AlipayApiException {
         // 将异步通知的参数转换为Map
         Map<String, String> params = convertRequestParamsToMap(request);
-        System.out.println(params);
+        System.out.println("!"+params);
 
         // 验证签名
         boolean signVerified = AlipaySignature.rsaCheckV1(
